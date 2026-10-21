@@ -3,7 +3,8 @@
 
 import { INTERPRETATION_SCHEMA, validate, normalizeEnums } from './schema.js';
 import { locateSourceText, sameValue, squash, canonical } from './text.js';
-import { findMunicipio, STREET_TYPES, isPrZip, MUNICIPIOS } from './vocab.js';
+import { findMunicipio, STREET_TYPES, isPrZip, MUNICIPIOS, findPostalPlace } from './vocab.js';
+import { isKnownBarrio } from './barrios.js';
 
 const MUNICIPIO_WORDS = MUNICIPIOS.map((m) => m.key);
 import { fold } from './text.js';
@@ -60,6 +61,12 @@ export function runGate(input, rawModelData, rulesParse) {
     components.push(comp);
   }
 
+  // A place the model called a barrio without "Bo." that is no barrio but a known postal place is a postal city.
+  for (const c of components) {
+    if (c.name === 'barrio' && !/\b(bo|barrio)\b/i.test(fold(c.source_text)) && !isKnownBarrio(c.value) && findPostalPlace(c.value)) {
+      c.name = 'city'; c.role = 'postal_city'; c.value = findPostalPlace(c.value).name;
+    }
+  }
   // A lone municipio name is not known to be a postal city; only the point can say that.
   const cities = components.filter((c) => c.name === 'city');
   if (cities.length === 1 && cities[0].role === 'postal_city' && findMunicipio(cities[0].value)) cities[0].role = 'unknown';
