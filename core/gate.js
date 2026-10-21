@@ -36,13 +36,15 @@ export function runGate(input, rawModelData, rulesParse) {
     comp.span = loc.span;
     // The value must be a reading of its own source text, not new content.
     if (!valueFitsSource(comp)) {
-      // A place name the model "corrected" (Río Piedras -> San Juan) keeps what was typed, as a postal city.
-      if (comp.name === 'city') {
-        dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE', salvaged: true });
-        comp.value = titleCase(squash(c.source_text));
-        comp.role = findMunicipio(comp.value) ? (comp.role === 'municipality' ? 'municipality' : 'unknown') : 'postal_city';
-      } else { dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE' }); continue; }
+      // The source text is verified but the value is not a reading of it (a garbled ZIP, a place "corrected" to
+      // its municipio). Rebuild the value from what was typed when that can be done by rule; otherwise drop it.
+      const rebuilt = valueFromSource(comp.name, c.source_text);
+      if (!rebuilt) { dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE' }); continue; }
+      dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE', salvaged: true });
+      comp.value = rebuilt;
+      if (comp.name === 'city') comp.role = findMunicipio(rebuilt) ? (comp.role === 'municipality' ? 'municipality' : 'unknown') : 'postal_city';
     }
+    if (comp.name === 'km_hm') comp.value = normalizeKm(comp.value) ?? normalizeKm(c.source_text) ?? comp.value;
     // Vocabulary.
     if (comp.name === 'street_type') comp.value = STREET_TYPES.get(fold(comp.value).replace(/\.$/, '')) ?? comp.value;
     if (comp.name === 'zip') {
@@ -98,6 +100,29 @@ export function runGate(input, rawModelData, rulesParse) {
     user_prompts: modelData.user_prompts.slice(0, 6),
     missing_required: modelData.missing_required,
   };
+}
+
+/** Standard form of a part computed from its own typed text, for parts where a rule can do it. */
+export function valueFromSource(name, sourceText) {
+  const t = squash(sourceText);
+  switch (name) {
+    case 'zip': return /\b(00[679]\d{2})/.exec(t)?.[1] ?? null;
+    case 'structure_number': return /^#?\s*[a-z0-9-]+$/i.test(t) ? t.replace(/^#\s*/, '').toUpperCase() : null;
+    case 'km_hm': return normalizeKm(t);
+    case 'street_name': case 'city': return titleCase(t);
+    case 'urbanization': case 'barrio': case 'sector': case 'complex':
+      return titleCase(t.replace(/^(urb\.?|urbanizaci[oó]n|bo\.?|barrio|sector|sect\.?|res\.?|residencial|cond\.?|condominio)\s+/i, ''));
+    default: return null;
+  }
+}
+
+/** "Km. 10.H 5", "10 Hm 5", "156 Hm 0" -> "10.5", "156.0"; "27.4" stays. */
+export function normalizeKm(s) {
+  const m = /(\d+(?:[.,]\d+)?)\s*\.?\s*(?:h\.?\s*m?\.?\s*(\d+))?/i.exec(String(s ?? ''));
+  if (!m) return null;
+  const km = m[1].replace(',', '.');
+  if (m[2] !== undefined && !km.includes('.')) return `${km}.${m[2].slice(0, 1)}`;
+  return km;
 }
 
 function valueFitsSource(c) {

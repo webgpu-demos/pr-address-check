@@ -148,10 +148,11 @@ Hard rules
 2. value is the standard form of the same text: "Calle", "Avenida", "Carretera" for street types; title case for names; digits only for ZIP.
 3. Never invent a structure number, ZIP, barrio or street. Missing parts go in missing_required (only from its enum).
 4. A municipio name inside a street name ("Calle Lares") is the street, not the city. Flag STREET_NAMED_AFTER_MUNICIPALITY.
-5. city role: "municipality" when written as "X Municipio" or the address names two places and X is the municipio; "postal_city" for a place name that is not one of the 78 municipios (Río Piedras, Hato Rey, Mercedita, Levittown), or for a PO box city; otherwise "unknown". Keep the place as typed: Río Piedras stays Río Piedras, never San Juan.
+5. city role: "municipality" when written as "X Municipio" or the address names two places and X is the municipio; "postal_city" for a place name that is not one of the 78 municipios (Río Piedras, Hato Rey, Mercedita, Levittown), or for a PO box city; otherwise "unknown". Keep the place as typed: Río Piedras stays Río Piedras, never San Juan. A place name in the city position (just before the state or ZIP) that is not a municipio is a postal_city, not a barrio.
 6. Delivery labels, company or office names, "Attn" lines and landmark descriptions are label_text with flag NON_ADDRESS_TEXT.
 7. Routes: "Carr. 2", "Road 165", "PR-165" are street_type "Carretera" with street_name and route_number both set to the route number.
-8. KM or HM marks are km_hm with flag KM_PRESENT. They do not replace a structure number.
+8. KM or HM marks are km_hm with flag KM_PRESENT; write the value as a decimal kilometer ("Km 10 Hm 5" -> "10.5"). They do not replace a structure number.
+8b. "Pda. 37" or "Parada 37" is a bus stop, a landmark: label_text, never a structure number. "#25", "No. 25", "Núm. 25" are the structure number.
 9. "B-14" or "G-22" style numbers are structure_number with flag AMBIGUOUS_NUMBER.
 10. A name between the street and the city with no marker is usually an urbanización: name it urbanization and flag UNLABELED_LOCALITY.
 11. PO Box, Apartado, HC or RR box: postal_box. Only a box and no street: address_class "postal_only".

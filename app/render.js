@@ -16,7 +16,7 @@ const ROLE = { municipality: 'municipio', postal_city: 'postal city' };
 const COMPLIANCE_CLASS = {
   'Compliant': 's-ok', 'Compliant with warnings': 's-warn', 'Not compliant': 's-block', 'Needs review': 's-review', 'Postal only': 's-postal',
 };
-const LOCATION_CLASS = { rooftop: 'loc-good', interpolated: 'loc-good', km: 'loc-good', street: 'loc-weak', area: 'loc-weak', ambiguous: 'loc-bad', conflict: 'loc-bad', outside: 'loc-none', none: 'loc-none' };
+const LOCATION_CLASS = { rooftop: 'loc-good', interpolated: 'loc-good', km: 'loc-weak', street: 'loc-weak', area: 'loc-weak', ambiguous: 'loc-bad', conflict: 'loc-bad', outside: 'loc-none', none: 'loc-none' };
 
 /** The input with each recognized part underlined and labeled. Text nobody claimed stays plain. */
 export function annotate(input, components) {

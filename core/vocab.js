@@ -36,6 +36,21 @@ export function findMunicipio(name) {
   return MUNI_BY_KEY.get(k) ?? null;
 }
 
+/**
+ * Postal place names that are not municipios: USPS city names and the San Juan-area places people write as a city.
+ * Used only to recognize a place in the city slot; the point still decides the municipio.
+ */
+export const POSTAL_PLACES = ['Río Piedras', 'Hato Rey', 'Santurce', 'Condado', 'Isla Verde', 'Caparra', 'Caparra Heights',
+  'Viejo San Juan', 'Old San Juan', 'Puerto Nuevo', 'Cupey', 'Levittown', 'Mercedita', 'Ángeles', 'Boquerón', 'Palmer',
+  'Castañer', 'Ensenada', 'Fort Buchanan', 'Sabana Seca', 'Ramey', 'Saint Just', 'Bajadero', 'Garrochales', 'Rosario',
+  'Coto Laurel', 'Aguirre', 'Punta Santiago', 'La Plata', 'Sabana Hoyos', 'Puerto Real', 'Río Blanco', 'San Antonio',
+  'Ocean Park', 'Miramar', 'Trujillo Bajo', 'Mayagüez Terrace'].map((name) => ({ name, key: fold(name) }));
+
+export function findPostalPlace(s) {
+  const k = fold(s).replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
+  return POSTAL_PLACES.find((p) => p.key === k) ?? null;
+}
+
 /** Street types, keyed by the folded word people type, valued by the standard form. */
 export const STREET_TYPES = new Map([
   ['calle', 'Calle'], ['cll', 'Calle'], ['c/', 'Calle'],

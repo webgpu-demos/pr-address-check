@@ -5,11 +5,11 @@ import { sameValue, fold } from './text.js';
 import { municipalityOf } from './geocode/orchestrate.js';
 
 export const COMPLIANCE = ['Postal only', 'Needs review', 'Not compliant', 'Compliant with warnings', 'Compliant'];
-const PRECISION_ORDER = { rooftop: 4, interpolated: 3, km: 3, street: 2, area: 1, none: 0 };
+const PRECISION_ORDER = { rooftop: 4, interpolated: 3, km: 2, street: 2, area: 1, none: 0 };
 const SEVERITY_STATUS = { review: 'Needs review', block: 'Not compliant', warn: 'Compliant with warnings' };
 
 export const LOCATION_LABEL = {
-  rooftop: 'Address point', interpolated: 'Street range', km: 'KM marker', street: 'Street only', area: 'Area only',
+  rooftop: 'Address point', interpolated: 'Street range', km: 'KM marker (approx.)', street: 'Street only', area: 'Area only',
   ambiguous: 'Ambiguous', conflict: 'Conflicting match', outside: 'Outside Puerto Rico', none: 'Not located',
 };
 // Location reasons describe where the point landed. They set the location status, never compliance.
@@ -46,9 +46,14 @@ export function tieBreak(comps, rulesComps, disagreements, best, place) {
     const rulesOk = d.rules && evidence.some((e) => agrees(d.name, d.rules, e));
     if (modelOk && !rulesOk) { resolved.push({ ...d, winner: 'model' }); continue; }
     if (rulesOk && !modelOk) {
-      const fromRules = pickComp(rulesComps, d.name);
-      const i = out.findIndex((c) => sameField(c, d.name));
-      if (fromRules) { if (i >= 0) out[i] = { ...fromRules }; else out.push({ ...fromRules }); }
+      // The street goes over as a unit (type, name, route) so "Avenida 908" is never assembled.
+      const names = d.name === 'street_name' ? ['street_type', 'street_name', 'route_number'] : [d.name];
+      for (const n of names) {
+        const fromRules = rulesComps.filter((c) => sameField(c, n));
+        const keep = out.filter((c) => !sameField(c, n));
+        out.length = 0;
+        out.push(...keep, ...fromRules.map((c) => ({ ...c })));
+      }
       resolved.push({ ...d, winner: 'rules' });
       continue;
     }
@@ -181,7 +186,8 @@ export function buildResult(x) {
         text: `The closest match is a different place (${why}): ${best.matched}.` });
     } else if (!precisionOk && !x.ambiguous) {
       const eff = best.effectivePrecision ?? 0;
-      const what = eff >= 2 ? 'the street, not the house' : 'an area (ZIP, barrio or town), not the address';
+      const what = best.precision === 'km' && eff === 2 ? 'a KM marker, placed along the road and often a kilometer or more off'
+        : eff >= 2 ? 'the street, not the house' : 'an area (ZIP, barrio or town), not the address';
       reasons.push({ code: 'LOW_PRECISION', severity: 'warn', maturity: 'core', source: 'map',
         text: `Located only to ${what}${best.consistency?.number === false ? '; the house number did not match' : ''}${best.consistency?.street === false ? '; the street did not match' : ''}.` });
     }

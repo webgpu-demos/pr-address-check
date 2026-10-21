@@ -80,7 +80,7 @@ export function renderReport(scored) {
     <h3>Where the point lands</h3>
     <table><thead>${head}</thead><tbody>${loc}</tbody></table>
     <p class="note">Unit ≤50 m, neighborhood ≤500 m of the true point. Rates with 95% Wilson intervals.</p>
-    <h3>Address-level answers only</h3>
+    <h3>Address-level answers only (address point, street range)</h3>
     <table><thead><tr><th>Arm</th><th title="Share of rows answered at address level">Answered</th><th>Unit</th><th>Neighborhood</th><th title="Presented as address-level but more than 500 m off">Confident wrong</th></tr></thead>
     <tbody>${rep.map((a) => `<tr><td>${esc(armLabel(a.arm))}</td><td>${cell(a.summary.claimShare)}</td><td>${cell(a.summary.claimBuckets.unit)}</td><td>${cell(a.summary.claimBuckets.neighborhood)}</td><td>${cell(a.summary.claimBuckets.wrong_area)}</td></tr>`).join('')}</tbody></table>
     <h3>Reading the address</h3>

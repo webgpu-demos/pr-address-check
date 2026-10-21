@@ -90,3 +90,20 @@ test('every rule component points at its own text', () => {
   const p = parseRules(input);
   for (const c of p.components) assert.equal(input.slice(c.span[0], c.span[1]), c.source_text, c.name);
 });
+
+test('real-world number and landmark patterns (invented addresses)', () => {
+  const v = (s, n) => parseRules(s).components.find((c) => c.name === n)?.value;
+  assert.equal(v('Calle Luna No. 14', 'structure_number'), '14');
+  assert.equal(v('Calle Luna No. 14', 'street_name'), 'Luna');
+  assert.equal(v('Calle Sol #9, Lares', 'structure_number'), '9');
+  assert.equal(v('Carr. 155 Núm. 40, Morovis', 'structure_number'), '40');
+  assert.equal(v('7 Calle Paz (al lado de la iglesia), Ciales', 'street_name'), 'Paz');
+  assert.equal(v('7 Calle Paz (al lado de la iglesia), Ciales', 'label_text'), 'al lado de la iglesia');
+  assert.equal(v('Ave. Central, Esq. Calle Rosa Pda. 12, Hato Rey', 'structure_number'), undefined);
+  assert.equal(v('State Hwy #3, Km. 22.1, Humacao', 'route_number'), '3');
+  assert.equal(v('State Hwy #3, Km. 22.1, Humacao', 'structure_number'), undefined);
+  assert.equal(v('CARRETERA 159. K.6.H 3, COROZAL', 'km_hm'), '6.3');
+  assert.equal(v('12 Calle Marina, Boqueron, PR 00622', 'city'), 'Boquerón');
+  assert.equal(v('Calle Coll y Toste 12, San Juan', 'street_name'), 'Coll y Toste');
+  assert.equal(v('300 Roble Avenue, Ceiba', 'street_type'), 'Avenida');
+});

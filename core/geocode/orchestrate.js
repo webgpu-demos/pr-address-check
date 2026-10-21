@@ -3,7 +3,8 @@
 import { canonical, sameValue, fold } from '../text.js';
 import { findMunicipio } from '../vocab.js';
 
-export const PRECISION_RANK = { rooftop: 4, interpolated: 3, km: 3, street: 2, area: 1, none: 0 };
+// KM markers are placed by interpolating along the route, often a kilometer or more off: trusted like a street.
+export const PRECISION_RANK = { rooftop: 4, interpolated: 3, km: 2, street: 2, area: 1, none: 0 };
 
 export function value(comps, name, role) {
   const list = comps.filter((c) => c.name === name && (!role || c.role === role));
@@ -207,7 +208,8 @@ export function pickBest(candidates, comps) {
   // When the best we can stand behind is coarse but a precise match exists elsewhere, surface it:
   // it usually means the typed municipio or ZIP is wrong.
   const strongConflict = best.effectivePrecision < 3
-    ? ranked.find((c) => c.conflict && (PRECISION_RANK[c.precision] ?? 0) >= 3 && c.consistency.street === true && c.consistency.number !== false)
+    ? ranked.find((c) => c.conflict && (PRECISION_RANK[c.precision] ?? 0) >= Math.max(2, best.effectivePrecision)
+      && c.consistency.street === true && c.consistency.number === true)
     : null;
   return { best, ambiguous, rival: ambiguous ? rival : null, conflictAlt: strongConflict ?? null, ranked: ranked.slice(0, 8) };
 }

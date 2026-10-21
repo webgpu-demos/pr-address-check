@@ -34,7 +34,7 @@ export function scoreRow(kase, result) {
     location: result.location_label, municipality: result.record.municipality, expected_municipio: kase.expected_municipio ?? '',
     distance_m: '', bucket: '', cost: result.cost ?? '', latency_ms: result.latency_ms ?? '',
     geocode_stage: result.geocode_stage, fallback: result.fallback?.used ? result.fallback.reason : '',
-    claim: ['rooftop', 'interpolated', 'km'].includes(result.location) ? result.location : '',
+    claim: ['rooftop', 'interpolated'].includes(result.location) ? result.location : '',
   };
   const lat = Number(kase.expected_lat); const lon = Number(kase.expected_lon);
   if (kase.expected_lat !== '' && kase.expected_lat !== undefined && Number.isFinite(lat) && Number.isFinite(lon)) {
