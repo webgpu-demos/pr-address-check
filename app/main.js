@@ -292,6 +292,10 @@ $('batch-run').addEventListener('click', async () => {
       rows, addressCol, idCol, modes, concurrency: settings.concurrency, signal: batchCtrl.signal, runOne,
       onResult: (entry, done, total) => {
         entries.push(entry);
+        if (/HTTP 40[13]/.test(entry.result?.fallback?.detail ?? '') && !batchCtrl.signal.aborted) {
+          batchCtrl.abort();
+          alertMsg('Model key rejected', 'Stopped the batch: every AI row would fall back to rules. Check the key in Settings.', 'warning');
+        }
         if (entry.result?.cost) cost += entry.result.cost;
         if (entry.error) errors++;
         $('batch-bar').value = Math.round((done / total) * 100);
