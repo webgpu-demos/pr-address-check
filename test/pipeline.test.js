@@ -196,7 +196,9 @@ test('form municipality is checked against the point; a map pick replaces geocod
   const r = await validateAddress('45 Calle Lares, Urb. Santa Rita', ctx({ mode: 'rules', formMunicipio: 'San Juan',
     geocoders: fakeGeocoders({ 'esri:*': ESRI_HIT }, calls) }));
   assert.equal(r.fields.city.source, 'form');
-  assert.ok(r.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT'));
+  // The only match is in Guaynabo and nothing else agrees with it: a conflicting match, not a location.
+  assert.equal(r.location, 'conflict');
+  assert.ok(r.reasons.some((x) => x.code === 'LOCATION_CONFLICT'));
   const picked = await validateAddress('45 Calle Lares, Urb. Santa Rita', ctx({ mode: 'rules', formMunicipio: 'San Juan',
     manualPoint: { lon: -66.07, lat: 18.35 }, geocoders: fakeGeocoders({}, calls) }));
   assert.equal(picked.record.municipality, 'San Juan');
@@ -211,4 +213,30 @@ test('enum casing from the model is normalized before the gate', () => {
   const g = runGate(INPUT, cased, parseRules(INPUT));
   assert.ok(g.ok);
   assert.equal(g.address_class, 'physical_urban');
+});
+
+test('a KM marker in another municipio loses to the typed municipio and is surfaced', async () => {
+  const km = [{ matched: 'Carr 191 KM 1.4, Río Blanco, Naguabo, 00718', lon: -66.07, lat: 18.35, precision: 'interpolated', addrType: 'DistanceMarker',
+    parts: { number: '1.4', street: 'Carr 191', streetName: 'Carr 191', municipio: 'Naguabo', city: 'Río Blanco', zip: '00718', district: '' } },
+  { matched: 'Carr-191, Barrio Mameyes II, Río Grande, 00745', lon: -66.11, lat: 18.35, precision: 'street', addrType: 'StreetName',
+    parts: { street: 'Carr-191', streetName: 'Carr-191', municipio: 'Río Grande', city: 'Río Grande', zip: '00745', district: 'Barrio Mameyes II' } }];
+  const r = await validateAddress('Bo. Mameyes Carr 191 Km 1.4, Rio Grande', ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': km }) }));
+  assert.equal(r.best.addrType, 'StreetName');
+  assert.ok(r.reasons.some((x) => x.code === 'LOCATION_CONFLICT' && /Naguabo/.test(x.text)));
+});
+
+test('same street in a different urbanización is a conflict', async () => {
+  const other = [{ ...ESRI_HIT[0], matched: '45 Calle Lares, Urb La Cumbre, Guaynabo, 00969',
+    parts: { ...ESRI_HIT[0].parts, neighborhood: 'Urb La Cumbre' } }];
+  const r = await validateAddress(INPUT, ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': other }) }));
+  assert.equal(r.location, 'conflict');
+});
+
+test('the gate sets aside flags the verified parts do not support', () => {
+  const a = structuredClone(MODEL_ANSWER);
+  a.flags.push({ code: 'KM_PRESENT', note: 'no km here' });
+  const g = runGate(INPUT, a, parseRules(INPUT));
+  assert.ok(!g.flags.some((f) => f.code === 'KM_PRESENT'));
+  assert.equal(g.droppedFlags[0].code, 'KM_PRESENT');
+  assert.ok(g.flags.some((f) => f.code === 'STREET_NAMED_AFTER_MUNICIPALITY'));
 });

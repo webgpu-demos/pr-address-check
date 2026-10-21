@@ -102,6 +102,7 @@ export function renderResult(r, { required = [] } = {}) {
       <tr><td>Cost · latency</td><td class="m">${fmtCost(r.cost)} · ${fmtMs(r.latency_ms)}</td></tr>
       ${r.fallback?.used ? `<tr><td>Fallback</td><td class="m">${esc(r.fallback.reason)}: ${esc(r.fallback.detail)}</td></tr>` : ''}
       ${g ? `<tr><td>Gate</td><td class="m">${g.ok ? 'passed' : `failed (${esc(g.reason)})`}${g.dropped?.length ? `; set aside: ${g.dropped.map((x) => `${esc(x.component.name)} "${esc(x.component.source_text || x.component.value)}" (${esc(x.reason)})`).join(', ')}` : ''}</td></tr>` : ''}
+      ${g?.droppedFlags?.length ? `<tr><td>Flags set aside</td><td class="m">${g.droppedFlags.map((f) => `${esc(f.code)}: ${esc(f.note)}`).join('<br>')}</td></tr>` : ''}
       ${g?.disagreements?.length ? `<tr><td>Model vs rules</td><td class="m">${g.disagreements.map((x) => `${esc(x.name)}: "${esc(x.model)}" vs "${esc(x.rules)}"${(() => { const w = (g.resolved ?? []).find((k) => k.name === x.name); return w ? ` → ${esc(w.winner)}` : ' → open'; })()}`).join('<br>')}</td></tr>` : ''}
       ${r.review ? `<tr><td>Review summary</td><td>${esc(r.review.summary || r.review.error || '')}</td></tr>` : ''}
     </table>

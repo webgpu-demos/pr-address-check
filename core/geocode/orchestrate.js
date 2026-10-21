@@ -109,8 +109,9 @@ export function consistency(c, comps) {
   const name = route || value(comps, 'street_name');
   const zip = value(comps, 'zip');
   const urb = value(comps, 'urbanization');
+  const barrio = value(comps, 'barrio');
   const muni = municipalityOf(comps);
-  const out = { number: null, street: null, zip: null, municipio: null, urbanization: null };
+  const out = { number: null, street: null, zip: null, municipio: null, urbanization: null, barrio: null };
   const matched = canonical(c.matched);
   const km = value(comps, 'km_hm');
   if (c.addrType === 'DistanceMarker') {
@@ -143,8 +144,15 @@ export function consistency(c, comps) {
   }
   if (zip && c.parts.zip) out.zip = c.parts.zip.slice(0, 5) === zip;
   if (muni && (c.parts.municipio || c.parts.city)) {
-    out.municipio = findMunicipio(c.parts.municipio)?.name === muni.name || sameValue(c.parts.city || '', muni.name)
-      || fold(c.matched).includes(fold(muni.name)) ? true : null; // a different postal city is not proof of a miss
+    // Esri's Subregion is the municipio; its City is the postal city. A typed postal city that matches City is fine.
+    const candMuni = findMunicipio(c.parts.municipio);
+    const postalMatch = sameValue(c.parts.city || '', muni.name);
+    if (candMuni) out.municipio = candMuni.name === muni.name || postalMatch;
+    else out.municipio = postalMatch || fold(c.matched).includes(fold(muni.name)) ? true : null;
+  }
+  if (barrio && c.parts.district) {
+    const a = canonical(barrio); const b = canonical(String(c.parts.district).replace(/^barrio\s+/i, ''));
+    out.barrio = a.includes(b) || b.includes(a);
   }
   // Urbanización: the candidate names one (Esri "Urb X" in the match, Census urb) and it is not the typed one.
   const candUrb = c.parts.urb || String(c.parts.neighborhood ?? '').replace(/^urb\.?\s+/i, '') || (/\burb\.?\s+([^,]+)/i.exec(c.matched)?.[1] ?? '');
@@ -155,13 +163,14 @@ export function consistency(c, comps) {
   return out;
 }
 
-/** The candidate names a different place: two independent misses, or a wrong ZIP in another municipio. */
-export function isConflict(c, k, comps) {
-  const muni = municipalityOf(comps);
-  const candMuni = findMunicipio(c.parts.municipio);
-  const otherMuni = Boolean(muni && candMuni && candMuni.name !== muni.name);
-  const misses = [k.zip, k.urbanization].filter((v) => v === false).length;
-  return misses >= 2 || (k.zip === false && otherMuni) || (k.urbanization === false && otherMuni);
+/**
+ * The candidate names a different place. In Puerto Rico the same street name repeats across urbanizaciones,
+ * so a different urbanización is a different place; so is another municipio unless the ZIP agrees.
+ */
+export function isConflict(c, k) {
+  if (k.urbanization === false) return true;
+  if (k.municipio === false && k.zip !== true) return true;
+  return k.zip === false && k.barrio === false;
 }
 
 export function rankCandidate(c, comps) {
@@ -170,7 +179,7 @@ export function rankCandidate(c, comps) {
   const misses = Object.values(k).filter((v) => v === false).length;
   // A rooftop hit on the wrong house number is worse than a street-range hit on the right one.
   const precision = PRECISION_RANK[c.precision] ?? 0;
-  const conflict = isConflict(c, k, comps);
+  const conflict = isConflict(c, k);
   let effective = k.number === false && precision >= 3 ? 2 : precision;
   // A different street is not this address: only its area can be trusted.
   if (k.street === false && precision >= 2) effective = Math.min(effective, 1);

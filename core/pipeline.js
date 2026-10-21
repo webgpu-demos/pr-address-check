@@ -164,7 +164,7 @@ export async function validateAddress(rawInput, ctx) {
     censusHit: geo.censusHit,
     place,
     usng: usngText,
-    gate: gate ? { ok: gate.ok, reason: gate.reason, dropped: gate.dropped, disagreements: gate.disagreements, resolved: gate.resolved ?? [], raw: gate.raw } : null,
+    gate: gate ? { ok: gate.ok, reason: gate.reason, dropped: gate.dropped, droppedFlags: gate.droppedFlags ?? [], disagreements: gate.disagreements, resolved: gate.resolved ?? [], raw: gate.raw } : null,
     review,
     fallback,
     usage,

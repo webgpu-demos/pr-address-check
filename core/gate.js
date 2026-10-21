@@ -3,7 +3,9 @@
 
 import { INTERPRETATION_SCHEMA, validate, normalizeEnums } from './schema.js';
 import { locateSourceText, sameValue, squash, canonical } from './text.js';
-import { findMunicipio, STREET_TYPES, isPrZip } from './vocab.js';
+import { findMunicipio, STREET_TYPES, isPrZip, MUNICIPIOS } from './vocab.js';
+
+const MUNICIPIO_WORDS = MUNICIPIOS.map((m) => m.key);
 import { fold } from './text.js';
 
 const KEY_FIELDS = ['structure_number', 'street_name', 'zip', 'city', 'urbanization', 'barrio'];
@@ -47,7 +49,13 @@ export function runGate(input, rawModelData, rulesParse) {
     components.push(comp);
   }
 
-  const flags = modelData.flags.map((f) => ({ ...f, source: 'model' }));
+  // Flags must agree with the verified parts; a flag with nothing behind it is set aside.
+  const droppedFlags = [];
+  const flags = [];
+  for (const f of modelData.flags) {
+    if (flagSupported(f.code, components)) flags.push({ ...f, source: 'model' });
+    else droppedFlags.push(f);
+  }
   const zip = components.find((c) => c.name === 'zip');
   if (zip && !isPrZip(zip.value) && !flags.some((f) => f.code === 'ZIP_OUT_OF_RANGE')) {
     flags.push({ code: 'ZIP_OUT_OF_RANGE', note: 'The ZIP is not a Puerto Rico ZIP.', source: 'gate' });
@@ -64,6 +72,7 @@ export function runGate(input, rawModelData, rulesParse) {
     components,
     flags,
     dropped,
+    droppedFlags,
     disagreements,
     geocode_plan: modelData.geocode_plan.filter((q) => q.query && q.query.length < 300).slice(0, 3),
     user_prompts: modelData.user_prompts.slice(0, 6),
@@ -107,4 +116,18 @@ function pick(comps, name) {
       ?? comps.find((c) => c.name === 'city');
   }
   return comps.find((c) => c.name === name);
+}
+
+function flagSupported(code, comps) {
+  const get = (n) => comps.filter((c) => c.name === n);
+  switch (code) {
+    case 'KM_PRESENT': return get('km_hm').length > 0;
+    case 'NON_ADDRESS_TEXT': return get('label_text').length > 0;
+    case 'STREET_NAMED_AFTER_MUNICIPALITY':
+      return get('street_name').some((c) => MUNICIPIO_WORDS.some((m) => ` ${fold(c.value)} `.includes(` ${m} `)));
+    case 'AMBIGUOUS_NUMBER': return get('structure_number').some((c) => /[a-z]|-/i.test(c.value));
+    case 'UNLABELED_LOCALITY': return get('urbanization').some((c) => !/\b(urb|urbanizaci[oó]n|urbanization)\b/i.test(c.source_text));
+    case 'POSTAL_CITY_DIFFERS': return get('city').some((c) => c.role === 'postal_city' || !findMunicipio(c.value)) || get('city').length > 1;
+    default: return true;
+  }
 }
