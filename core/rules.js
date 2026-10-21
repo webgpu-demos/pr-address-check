@@ -197,7 +197,7 @@ export function parseRules(input, opts = {}) {
       // "18 Ceiba Apt 2, ..." — a number and a name with no street type.
       const nameToks = [];
       let j = 1;
-      while (j < tokens.length && !isStop(tokens[j]) && !(nameToks.length && isMunicipioAt(tokens, j, true))) { nameToks.push(tokens[j]); j++; }
+      while (j < tokens.length && !isStop(tokens[j]) && !(nameToks.length && (isMunicipioAt(tokens, j, true) || postalPlaceAt(tokens, j)))) { nameToks.push(tokens[j]); j++; }
       if (nameToks.length && nameToks.length <= 4) {
         add('street_name', nameToks.map((w) => w.raw).join(' ').replace(/[.,]$/, ''), nameToks[0].start, nameToks[nameToks.length - 1].end);
         street = { typeIndex: 1, nameEnd: j - 1, untyped: true };

@@ -77,6 +77,15 @@ export function runGate(input, rawModelData, rulesParse) {
     if (ok) modelFlags.push({ ...f, source: 'model' }); else droppedFlags.push(f);
   }
   const flags = mergeFlags(derived, modelFlags);
+
+  // The class follows the verified parts. The model's label stands only where structure cannot decide
+  // (directions, not an address, a complex without a street).
+  const has = (n) => components.some((c) => c.name === n);
+  let addressClass = modelData.address_class;
+  if (has('postal_box')) addressClass = has('street_name') || has('route_number') ? 'mixed' : 'postal_only';
+  else if (has('structure_number') && (has('street_name') || has('route_number'))) addressClass = has('route_number') && !has('street_type') ? 'physical_rural' : 'physical_urban';
+  else if (has('route_number') || has('km_hm')) addressClass = addressClass === 'descriptive' ? 'descriptive' : 'physical_rural';
+  else if (addressClass === 'postal_only' || addressClass === 'mixed') addressClass = 'ambiguous';
   const zip = components.find((c) => c.name === 'zip');
   if (zip && !isPrZip(zip.value) && !flags.some((f) => f.code === 'ZIP_OUT_OF_RANGE')) {
     flags.push({ code: 'ZIP_OUT_OF_RANGE', note: 'The ZIP is not a Puerto Rico ZIP.', source: 'gate' });
@@ -90,7 +99,8 @@ export function runGate(input, rawModelData, rulesParse) {
     ok,
     reason: ok ? '' : (components.length ? 'TOO_MANY_DROPPED' : 'NOTHING_VERIFIED'),
     errors: [],
-    address_class: modelData.address_class,
+    address_class: addressClass,
+    model_class: modelData.address_class,
     components,
     flags,
     dropped,

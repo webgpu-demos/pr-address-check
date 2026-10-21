@@ -3,6 +3,7 @@
 import { SCHEMA_REQUIRED, FIELD_LABELS, isPrZip, findMunicipio } from './vocab.js';
 import { sameValue, fold } from './text.js';
 import { municipalityOf } from './geocode/orchestrate.js';
+import { isKnownBarrio, MUNICIPIO_BY_COUNTY } from './barrios.js';
 
 export const COMPLIANCE = ['Postal only', 'Needs review', 'Not compliant', 'Compliant with warnings', 'Compliant'];
 const PRECISION_ORDER = { rooftop: 4, interpolated: 3, km: 2, street: 2, area: 1, none: 0 };
@@ -146,10 +147,19 @@ export function buildResult(x) {
     state: usable || (x.inferredState ?? false) ? 'PR' : '',
     zip: trusted && place.zcta ? place.zcta : '',
   };
+  // A typed barrio must be one of the municipio's barrios. "Bo. Coquí" or "Condado" is a community, not a barrio.
+  const barrioTypedC = comps.find((c) => c.name === 'barrio');
+  const barrioCounty = (trusted && place.municipio?.county) || muniTyped?.county || '';
+  const barrioOfficial = !barrioTypedC || isKnownBarrio(barrioTypedC.value, barrioCounty);
+  if (barrioTypedC && !barrioOfficial) {
+    const where = MUNICIPIO_BY_COUNTY[barrioCounty]?.name;
+    reasons.push({ code: 'BARRIO_NOT_OFFICIAL', severity: 'info', maturity: 'experimental', source: 'rules',
+      text: `"${barrioTypedC.value}" is not ${where ? `one of ${where}'s barrios` : 'a Puerto Rico barrio'}; it reads as a community or sector.` });
+  }
   const missing = [];
   const filled = [];
   for (const f of required) {
-    const present = f === 'street_name' ? has('street_name') || has('route_number') : has(f);
+    const present = f === 'street_name' ? has('street_name') || has('route_number') : f === 'barrio' ? has('barrio') && barrioOfficial : has(f);
     if (present) continue;
     // As typed by default: a field the map can fill is still missing. Settings can relax this.
     if (fillable[f] && settings.allowMapFill) filled.push(f); else missing.push(f);

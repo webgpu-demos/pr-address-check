@@ -291,3 +291,23 @@ test('with a house number and a KM on the same route, the house near the KM mark
   const r = await validateAddress('Carr. 123 #44 Km. 35.7, Adjuntas PR 00601', ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': [far, near, km] }) }));
   assert.equal(r.best.lat, 18.166);
 });
+
+test('the class follows the verified parts; the model cannot call a numbered street ambiguous', () => {
+  const input = '8 santiago iglesias maunabo';
+  const answer = { address_class: 'ambiguous', components: [
+    { name: 'structure_number', value: '8', source_text: '8', inferred_from: '', role: '' },
+    { name: 'street_name', value: 'Santiago Iglesias', source_text: 'santiago iglesias', inferred_from: '', role: '' },
+    { name: 'city', value: 'Maunabo', source_text: 'maunabo', inferred_from: '', role: 'unknown' }],
+    missing_required: [], flags: [], geocode_plan: [], user_prompts: [] };
+  const g = runGate(input, answer, parseRules(input));
+  assert.equal(g.address_class, 'physical_urban');
+});
+
+test('a typed barrio must be one of the municipio barrios', async () => {
+  const r = await validateAddress('45 Calle Lares, Urb. Santa Rita, Bo. Condado, Guaynabo PR 00969', ctx({ mode: 'rules' }));
+  assert.ok(r.reasons.some((x) => x.code === 'BARRIO_NOT_OFFICIAL'));
+  assert.ok(r.missing_required.includes('barrio'));
+  const ok = await validateAddress('45 Calle Lares, Urb. Santa Rita, Bo. Frailes, Guaynabo PR 00969', ctx({ mode: 'rules' }));
+  assert.ok(!ok.reasons.some((x) => x.code === 'BARRIO_NOT_OFFICIAL'));
+  assert.ok(!ok.missing_required.includes('barrio'));
+});
