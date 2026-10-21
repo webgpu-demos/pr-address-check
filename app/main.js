@@ -441,8 +441,8 @@ if (!S.getKey(settings.provider) && settings.mode !== 'rules') showPanel('settin
 
 // Console harness for scripted checks: await __prac.run('address', 'rules') returns the full result object.
 window.__prac = {
-  run: (input, mode = 'rules', formMunicipio = '') => validateAddress(input, {
-    mode, provider: MODES[mode].usesModel ? currentProvider() : null, geocoders, gis, usng, settings: pipelineSettings(), formMunicipio,
+  run: (input, mode = 'rules', formMunicipio = '', provider = undefined) => validateAddress(input, {
+    mode, provider: MODES[mode].usesModel ? (provider ?? currentProvider()) : null, geocoders, gis, usng, settings: pipelineSettings(), formMunicipio,
   }),
   show: (r) => { addrEl.value = r.input; showPanel('validate'); showResult(r, keyOf()); },
   gis,
