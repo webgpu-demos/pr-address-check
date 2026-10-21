@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PR Address Check</title>
+  <meta name="description" content="Prototype: an LLM reads a Puerto Rico address first, a gate verifies it, then geocoding and boundary checks." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23141414'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%231d5fbf'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="app/styles.css" />
+  <script>
+    // The Esri key (optional) must be set before the SDK loads. It lives in this tab's session storage only.
+    try {
+      const k = sessionStorage.getItem('prac.esriKey');
+      window.esriConfig = k ? { apiKey: k } : {};
+    } catch { window.esriConfig = {}; }
+  </script>
+  <script type="module" src="https://js.arcgis.com/5.1/"></script>
+</head>
+<body>
+  <calcite-shell id="shell">
+    <calcite-navigation slot="header">
+      <calcite-navigation-logo slot="logo" heading="PR Address Check" description="Prototype · public data only · not for applicant data"></calcite-navigation-logo>
+      <div slot="content-end" class="nav-end">
+        <span id="nav-model" class="nav-model" title="Model used by AI modes">No model set</span>
+        <span id="nav-bounds" class="nav-bounds">Boundaries loading</span>
+      </div>
+    </calcite-navigation>
+
+    <calcite-shell-panel slot="panel-start" id="side" width="l" resizable>
+      <calcite-action-bar slot="action-bar" id="actions" expand-disabled>
+        <calcite-action text="Validate" icon="pin-tear" data-panel="validate" active></calcite-action>
+        <calcite-action text="Batch" icon="table" data-panel="batch"></calcite-action>
+        <calcite-action text="Review" icon="check-square" data-panel="review" id="action-review"></calcite-action>
+        <calcite-action text="Layers" icon="layers" data-panel="layers"></calcite-action>
+        <calcite-action text="Settings" icon="gear" data-panel="settings" id="action-settings"></calcite-action>
+      </calcite-action-bar>
+
+      <!-- Validate -->
+      <calcite-panel id="panel-validate" heading="Validate an address">
+        <div class="pad">
+          <calcite-segmented-control id="mode" width="full" scale="s" class="mode">
+            <calcite-segmented-control-item value="rules">Rules only</calcite-segmented-control-item>
+            <calcite-segmented-control-item value="ai_after">AI after rules</calcite-segmented-control-item>
+            <calcite-segmented-control-item value="ai_first" checked>AI first</calcite-segmented-control-item>
+          </calcite-segmented-control>
+
+          <label class="lbl" for="addr">Address as typed</label>
+          <calcite-text-area id="addr" rows="3" max-length="500" placeholder="e.g. 45 Calle Lares, Urb. Santa Rita, Guaynabo PR 00969"></calcite-text-area>
+
+          <div class="row">
+            <div class="grow">
+              <label class="lbl" for="form-muni">Municipality picked in the form</label>
+              <calcite-select id="form-muni" scale="s"></calcite-select>
+            </div>
+            <calcite-button id="go" icon-start="play" kind="brand" class="go">Validate</calcite-button>
+          </div>
+          <p class="hint">Ctrl+Enter runs it. Public data only: Census and Esri geocoders, TIGERweb boundaries, and the model you set in Settings.</p>
+        </div>
+
+        <div id="result" class="result" hidden></div>
+        <div id="empty" class="empty">
+          <p>Type an address and run it. The result shows what was typed, what the model and rules read, and where the point lands.</p>
+        </div>
+      </calcite-panel>
+
+      <!-- Batch -->
+      <calcite-panel id="panel-batch" heading="Batch" hidden>
+        <div class="pad">
+          <p class="hint">Upload a CSV with an address column. If it has <code>expected_*</code> columns (from <code>tools/make-cases.mjs</code>), each run is scored.</p>
+          <input type="file" id="csv-file" accept=".csv,text/csv" class="file" />
+          <div id="csv-map" class="csv-map" hidden>
+            <div class="row">
+              <div class="grow">
+                <label class="lbl" for="csv-col">Address column</label>
+                <calcite-select id="csv-col" scale="s"></calcite-select>
+              </div>
+              <div>
+                <label class="lbl" for="csv-limit">Rows</label>
+                <calcite-input-number id="csv-limit" scale="s" min="1" step="1" value="200"></calcite-input-number>
+              </div>
+            </div>
+            <label class="lbl">Modes to run</label>
+            <div class="checks">
+              <calcite-label layout="inline"><calcite-checkbox data-mode="rules" checked></calcite-checkbox>Rules only</calcite-label>
+              <calcite-label layout="inline"><calcite-checkbox data-mode="ai_after"></calcite-checkbox>AI after rules</calcite-label>
+              <calcite-label layout="inline"><calcite-checkbox data-mode="ai_first" checked></calcite-checkbox>AI first</calcite-label>
+            </div>
+            <p id="csv-info" class="hint"></p>
+            <div class="row">
+              <calcite-button id="batch-run" icon-start="play" width="half">Run</calcite-button>
+              <calcite-button id="batch-stop" icon-start="stop" appearance="outline" kind="neutral" width="half" disabled>Stop</calcite-button>
+            </div>
+          </div>
+          <div id="batch-progress" class="progress" hidden>
+            <calcite-progress id="batch-bar" type="determinate" value="0"></calcite-progress>
+            <p id="batch-status" class="mono small"></p>
+          </div>
+        </div>
+        <div id="batch-out" hidden>
+          <div id="batch-filter" class="filters" role="tablist" aria-label="Filter by status"></div>
+          <div id="batch-list" class="batch-list"></div>
+          <div id="batch-report" class="report"></div>
+          <div class="pad row wrap">
+            <calcite-button id="exp-results" icon-start="download" appearance="outline" kind="neutral" scale="s">Results CSV</calcite-button>
+            <calcite-button id="exp-scored" icon-start="download" appearance="outline" kind="neutral" scale="s">Scored rows CSV</calcite-button>
+            <calcite-button id="exp-report" icon-start="download" appearance="outline" kind="neutral" scale="s">Report JSON</calcite-button>
+          </div>
+        </div>
+      </calcite-panel>
+
+      <!-- Review -->
+      <calcite-panel id="panel-review" heading="Review queue" hidden>
+        <div class="pad">
+          <p class="hint">Decisions stay in this browser. Export them as labeled cases for the test suite.</p>
+          <div class="row wrap">
+            <calcite-button id="rev-export" icon-start="download" appearance="outline" kind="neutral" scale="s">Labeled cases CSV</calcite-button>
+            <calcite-button id="rev-clear" icon-start="trash" appearance="transparent" kind="danger" scale="s">Clear</calcite-button>
+          </div>
+        </div>
+        <div id="rev-list" class="rev-list"></div>
+      </calcite-panel>
+
+      <!-- Layers -->
+      <calcite-panel id="panel-layers" heading="Layers" hidden>
+        <div class="pad">
+          <label class="lbl" for="basemap">Basemap</label>
+          <calcite-select id="basemap" scale="s">
+            <calcite-option value="light">Light</calcite-option>
+            <calcite-option value="osm">OpenStreetMap</calcite-option>
+            <calcite-option value="imagery">Imagery (needs Esri key)</calcite-option>
+          </calcite-select>
+          <div class="checks col">
+            <calcite-label layout="inline"><calcite-switch data-layer="municipio" checked></calcite-switch>Municipios (TIGERweb)</calcite-label>
+            <calcite-label layout="inline"><calcite-switch data-layer="barrio" checked></calcite-switch>Barrios (TIGERweb)</calcite-label>
+            <calcite-label layout="inline"><calcite-switch data-layer="zcta"></calcite-switch>ZIP areas, ZCTA (TIGERweb)</calcite-label>
+            <calcite-label layout="inline"><calcite-switch data-layer="batch" checked></calcite-switch>Batch results</calcite-label>
+          </div>
+          <p class="hint">The checks use these same polygons, so what you see is what was checked. Boundaries are simplified to about 10 m.</p>
+          <div id="bounds-status" class="mono small"></div>
+        </div>
+      </calcite-panel>
+
+      <!-- Settings -->
+      <calcite-panel id="panel-settings" heading="Settings" hidden>
+        <div class="pad">
+          <calcite-notice open kind="warning" scale="s" icon="key">
+            <div slot="message">Keys stay in this tab's session storage and go only to the provider you pick. This page is public: use a key with a spend limit, and no applicant data.</div>
+          </calcite-notice>
+
+          <label class="lbl" for="set-provider">Model provider</label>
+          <calcite-select id="set-provider" scale="s"></calcite-select>
+          <p id="set-provider-note" class="hint"></p>
+
+          <div id="set-provider-fields">
+            <label class="lbl" for="set-model">Model</label>
+            <calcite-input-text id="set-model" scale="s"></calcite-input-text>
+            <div id="set-model-list" class="chips"></div>
+
+            <div id="set-resource-wrap" hidden>
+              <label class="lbl" for="set-resource">Foundry resource name or endpoint URL</label>
+              <calcite-input-text id="set-resource" scale="s" placeholder="my-resource"></calcite-input-text>
+            </div>
+
+            <label class="lbl" for="set-key">API key</label>
+            <div class="row">
+              <calcite-input-text id="set-key" type="password" scale="s" class="grow" placeholder="Not saved beyond this tab"></calcite-input-text>
+              <calcite-button id="set-key-forget" appearance="outline" kind="neutral" scale="s">Forget</calcite-button>
+            </div>
+
+            <div class="row">
+              <div class="grow">
+                <label class="lbl" for="set-price-in">Input $/M tokens</label>
+                <calcite-input-number id="set-price-in" scale="s" step="0.01" min="0"></calcite-input-number>
+              </div>
+              <div class="grow">
+                <label class="lbl" for="set-price-out">Output $/M tokens</label>
+                <calcite-input-number id="set-price-out" scale="s" step="0.01" min="0"></calcite-input-number>
+              </div>
+            </div>
+            <calcite-button id="set-test" icon-start="check-circle" appearance="outline" kind="neutral" scale="s">Test the model</calcite-button>
+            <p id="set-test-out" class="mono small"></p>
+          </div>
+
+          <hr />
+          <label class="lbl" for="set-conc">Batch concurrency</label>
+          <calcite-input-number id="set-conc" scale="s" min="1" max="16" step="1" value="4"></calcite-input-number>
+
+          <label class="lbl">Required fields (as typed)</label>
+          <div id="set-required" class="checks col"></div>
+          <calcite-label layout="inline"><calcite-switch id="set-mapfill"></calcite-switch>Let the map fill missing barrio, city, state and ZIP (warning instead of not compliant)</calcite-label>
+
+          <hr />
+          <label class="lbl" for="set-esri">Esri API key (optional)</label>
+          <div class="row">
+            <calcite-input-text id="set-esri" type="password" scale="s" class="grow" placeholder="Referrer-limited key"></calcite-input-text>
+            <calcite-button id="set-esri-apply" appearance="outline" kind="neutral" scale="s">Apply</calcite-button>
+          </div>
+          <p class="hint">Without a key, geocoding runs anonymously (results not stored) and the basemap falls back to OpenStreetMap. Applying a key reloads the page.</p>
+        </div>
+      </calcite-panel>
+    </calcite-shell-panel>
+
+    <arcgis-map id="map" center="-66.45,18.22" zoom="9">
+      <arcgis-zoom slot="top-right"></arcgis-zoom>
+      <arcgis-home slot="top-right"></arcgis-home>
+      <arcgis-scale-bar slot="bottom-right" unit="dual"></arcgis-scale-bar>
+    </arcgis-map>
+    <div id="map-legend" class="map-legend" hidden></div>
+    <div id="pick-banner" class="pick-banner" hidden>Click the map where the property is. <button id="pick-cancel" type="button">Cancel</button></div>
+  </calcite-shell>
+
+  <calcite-alert id="alert" kind="danger" icon auto-close auto-close-duration="medium" placement="bottom-end">
+    <div slot="title" id="alert-title"></div>
+    <div slot="message" id="alert-msg"></div>
+  </calcite-alert>
+
+  <script type="module" src="app/main.js"></script>
+</body>
+</html>

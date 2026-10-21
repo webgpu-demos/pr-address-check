@@ -1,0 +1,16 @@
+{
+  "name": "pr-address-check",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LLM-first Puerto Rico address validation prototype: model reads the address, a gate verifies it, then geocoding and boundary checks.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "cases": "node tools/make-cases.mjs",
+    "serve": "npx --yes http-server -p 8080 -c-1 ."
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+cases.csv
+holdout.csv
+results-*.csv
+scored-*.csv
+report-*.json

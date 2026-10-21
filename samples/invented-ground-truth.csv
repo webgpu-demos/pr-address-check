@@ -1,0 +1,13 @@
+id,structure_number,street_type,street_name,unit,urbanization,barrio,municipio,zip,lat,lon,postal_city
+inv01,18,Calle,Ceiba,Apt 2,Los Pinos,Hato Tejas,Bayamón,00959,,,
+inv02,305,Avenida,Los Robles,,Vista Verde,Cupey,San Juan,00926,,,Río Piedras
+inv03,1120,Carretera,152,,,Quebradillas,Barranquitas,00794,,,
+inv04,7,Calle,Flamboyán,,Jardines de Cayey,Toíta,Cayey,00736,,,
+inv05,42,Calle,San José,Apt 3B,,Pueblo,Aibonito,00705,,,
+inv06,9,Calle,Almendro,,Villa Serena,Sabana Abajo,Carolina,00983,,,
+inv07,260,Calle,Coral,,Brisas del Mar,Coto Norte,Manatí,00674,,,
+inv08,51,Calle,Juncos,,Villa del Río,Caguas Norte,Caguas,00725,,,
+inv09,1450,Carretera,2,,,Algarrobos,Mayagüez,00682,,,
+inv10,3,Calle,Palma Real,,Estancias del Sol,Guayabal,Juana Díaz,00795,,,
+inv11,88,Avenida,Las Américas,,,Magueyes,Ponce,00728,,,
+inv12,14,Calle,Gardenia,Apt 101,Monte Claro,Río Lajas,Dorado,00646,,,
