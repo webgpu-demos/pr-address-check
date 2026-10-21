@@ -53,6 +53,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
         symbol: { type: 'text', color: opts.labelColor, haloColor: [255, 255, 255, 0.9], haloSize: 1.2,
           font: { family: 'Noto Sans', size: opts.labelSize, weight: opts.labelWeight ?? 'normal' } },
         minScale: opts.labelMinScale,
+        maxScale: opts.labelMaxScale ?? 0,
       }],
       minScale: opts.minScale ?? 0,
       visible: opts.visible ?? true,
@@ -71,11 +72,11 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
     }
     if (f('barrio')?.length && !layers.barrio) {
       polygonLayer('barrio', f('barrio'), { title: 'Barrios', outline: { color: [128, 125, 119, 0.7], width: 0.5 },
-        labelColor: [110, 107, 101, 1], labelSize: 9, labelMinScale: 90000, minScale: 700000, index: 1 });
+        labelColor: [110, 107, 101, 1], labelSize: 9, labelMinScale: 90000, labelMaxScale: 6000, minScale: 700000, index: 1 });
     }
     if (f('municipio')?.length && !layers.municipio) {
       polygonLayer('municipio', f('municipio'), { title: 'Municipios', outline: { color: [20, 20, 20, 0.85], width: 1.1 },
-        labelColor: [20, 20, 20, 1], labelSize: 10.5, labelWeight: 'bold', labelMinScale: 1200000, index: 2 });
+        labelColor: [20, 20, 20, 1], labelSize: 10.5, labelWeight: 'bold', labelMinScale: 1200000, labelMaxScale: 40000, index: 2 });
     }
   }
 
@@ -112,8 +113,8 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
         // Not a location we stand behind: an open vermilion ring, never the solid blue point.
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2.2 } } }));
       } else {
-        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 22, color: [29, 95, 191, 0.14], outline: { color: [29, 95, 191, 0], width: 0 } } }));
-        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 11, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2 } } }));
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 30, color: [29, 95, 191, 0.16], outline: { color: [29, 95, 191, 0.5], width: 1 } } }));
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 13, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2.5 } } }));
       }
       const zoom = { rooftop: 17, interpolated: 16, street: 15, area: 13 }[r.best.precision] ?? 14;
       goTo({ target: pt, zoom }, { duration: 600 });

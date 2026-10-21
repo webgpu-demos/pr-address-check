@@ -114,9 +114,11 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 16px 0 4px; }
 .ledger { width: calc(100% - 32px); margin: 14px 16px 0; border-collapse: collapse; font-size: 13px; }
 .ledger th { text-align: left; font: 500 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); padding: 6px 0; border-bottom: 1px solid var(--ink); }
 .ledger td { padding: 5px 6px 5px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
-.ledger td:first-child { color: var(--ink-2); width: 34%; }
+.ledger td:first-child { color: var(--ink-2); width: 30%; }
+.ledger td:last-child { width: 1%; white-space: nowrap; }
 .ledger td.val { font-family: var(--mono); font-size: 12.5px; word-break: break-word; }
-.ledger td.val.map { color: var(--data); }
+.ledger td.val.v-map { color: var(--data); }
+.ledger td.val.v-model { color: #5a3d8a; }
 .ledger td.val.missing { color: var(--alert); font-family: var(--sans); font-size: 12px; }
 .ledger td.typed-as { font: 11px var(--mono); color: var(--ink-3); }
 .ledger tr.full td { padding-top: 9px; font-weight: 500; }
@@ -180,7 +182,7 @@ arcgis-map { --arcgis-layout-overlay-space-top: 8px; }
 .pick-banner { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 12px; font-size: 13px; z-index: 3; }
 .pick-banner button { margin-left: 10px; background: transparent; color: #fff; border: 1px solid #fff; padding: 2px 8px; cursor: pointer; }
 
-#addr { --calcite-text-area-min-height: 72px; --calcite-text-area-max-height: 180px; }
+#addr { --calcite-text-area-min-height: 64px; --calcite-text-area-max-height: 96px; }
 arcgis-map { min-width: 120px; }
 @media (max-width: 900px) {
   .nav-end .nav-bounds { display: none; }

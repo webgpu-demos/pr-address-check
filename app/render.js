@@ -68,9 +68,9 @@ export function renderResult(r, { required = [] } = {}) {
     }
     const typedAs = fld.source === 'map' && fld.typed ? `<div class="typed-as">typed: ${esc(fld.typed)}</div>` : '';
     const miss = missing.has(name) ? ' <span class="src" title="Not typed; shown from the map">not typed</span>' : '';
-    return `<tr><td>${esc(label)}</td><td class="val ${fld.source}">${esc(fld.value)}${typedAs}</td><td><span class="src ${fld.source}" title="${fld.by ? `read by ${esc(fld.by)}` : ''}">${esc(fld.source)}</span>${miss}</td></tr>`;
+    return `<tr><td>${esc(label)}</td><td class="val v-${fld.source}">${esc(fld.value)}${typedAs}</td><td><span class="src ${fld.source}" title="${fld.by ? `read by ${esc(fld.by)}` : ''}">${esc(fld.source)}</span>${miss}</td></tr>`;
   };
-  const d = (label, value, cls = '') => (value === '' || value === null || value === undefined ? '' : `<tr><td>${esc(label)}</td><td class="val ${cls}">${esc(value)}</td><td>${cls === 'map' ? '<span class="src map">map</span>' : ''}</td></tr>`);
+  const d = (label, value, cls = '') => (value === '' || value === null || value === undefined ? '' : `<tr><td>${esc(label)}</td><td class="val v-${cls}">${esc(value)}</td><td>${cls === 'map' ? '<span class="src map">map</span>' : ''}</td></tr>`);
   const rec = r.record;
   const ledger = `
     <table class="ledger"><thead><tr><th>Field</th><th>Value</th><th>Source</th></tr></thead><tbody>

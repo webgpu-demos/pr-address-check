@@ -209,6 +209,11 @@ async function validate({ manualPoint = null, reuse = null } = {}) {
     });
     if (ctrl.signal.aborted) return;
     showResult(r, key);
+    if (r.fallback?.reason === 'MODEL_ERROR') {
+      const auth = /HTTP 401|HTTP 403/.test(r.fallback.detail);
+      alertMsg(auth ? 'Model key rejected' : 'Model call failed',
+        `${auth ? 'Check the key in Settings. ' : ''}Showing the rules-only result. ${r.fallback.detail}`, 'warning');
+    }
   } catch (err) {
     if (!ctrl.signal.aborted) alertMsg('Validation failed', String(err.message ?? err));
   } finally {
@@ -372,7 +377,15 @@ $('set-model-list').addEventListener('click', (e) => {
   if (m) { settings.models[settings.provider] = m; S.saveSettings(settings); paintProvider(); }
 });
 $('set-resource').addEventListener('calciteInputTextChange', (e) => { settings.resource = e.target.value.trim(); S.saveSettings(settings); });
-$('set-key').addEventListener('calciteInputTextChange', (e) => { S.setKey(settings.provider, e.target.value.trim()); paintProvider(); });
+const KEY_SHAPES = { anthropic: [/^sk-ant-api\d\d-/, 'Anthropic API keys start with sk-ant-api03-. Create one at console.anthropic.com → API Keys.'],
+  openai: [/^sk-/, 'OpenAI keys start with sk-.'] };
+$('set-key').addEventListener('calciteInputTextChange', (e) => {
+  const k = e.target.value.trim();
+  S.setKey(settings.provider, k);
+  paintProvider();
+  const shape = KEY_SHAPES[settings.provider];
+  if (k && shape && !shape[0].test(k)) $('set-test-out').textContent = `This doesn't look like an API key. ${shape[1]}`;
+});
 $('set-key-forget').addEventListener('click', () => { S.setKey(settings.provider, ''); paintProvider(); });
 const savePrice = () => {
   const id = settings.provider; const model = settings.models[id] || PROVIDERS[id].defaultModel;
