@@ -1,0 +1,61 @@
+id,expected_structure_number,expected_street_name,label_note
+f01,25,Muñoz Rivera,
+f02,-,,corner of two streets
+f03,8,Santiago Iglesias,
+f04,-,José De Diego,
+f05,37,Muñoz Rivera,
+f06,15,A Barcelo,
+f07,41,Fernando L Ribas,
+f08,9,Zuzuarregui,FRNT means frente
+f09,25,149,
+f10,37,778,
+f11,26,Pedro Marquez,
+f12,-,200,
+f13,100,,industrial park without a street
+f14,100,111,
+f15,-,165,
+f16,1400,Roosevelt,
+f17,300,101,
+f18,23,Principal,
+f19,A10,2,
+f20,66,Munoz Rivera,
+f21,-,Rodolfo González,
+f22,9,Hospital,
+f23,24,,two roads and an avenue
+f24,-,818,
+f25,-,Muñoz Rivera,Pda. 37 is a bus stop
+f26,-,121,
+f27,17,Victoría,
+f28,-,2,
+f29,-,123,
+f30,205,Antonio R. Barceló,
+f31,-,Belt,
+f32,-,,avenue name and route both given
+f33,170,174,
+f34,-,Rosanta Aulet,
+f35,-,119,
+f36,-,William Font,Final means end of the street
+f37,-,135,
+f38,-,,street and route both given
+f39,-,,landmark only
+f40,-,,avenue name and route both given
+f41,HF16,Lizzie Graham,block-lot
+f42,44,123,
+f43,-,116,
+f44,-,685,
+f45,-,149,corner of two routes
+f46,200,137,
+f47,1130,Ashford,
+f48,-,2,#2 is the route
+f49,-,2,
+f50,-,,corner of two streets
+f51,33,Luis Munoz Rivera,
+f52,12,Mateo Fajardo,
+f53,-,,corner of a street and a route
+f54,-,Comerio,
+f55,100,Roberto H Todd,
+f56,226,Lauro Piñero,
+f57,22,Luis Muñoz Rivera,
+f58,-,Miguel Pou,
+f59,150,Chardón,
+f60,-,3,

@@ -47,7 +47,8 @@ export function scoreRow(kase, result) {
   }
   // Fields as read from the input.
   const f = result.fields ?? {};
-  const fieldCheck = (exp, got) => (exp ? (got ? sameValue(exp, got) || canonical(got).replace(/\s/g, '') === canonical(exp).replace(/\s/g, '') : false) : null);
+  // "-" means the address has none: right only if nothing was read.
+  const fieldCheck = (exp, got) => (exp === '-' ? !got : exp ? (got ? sameValue(exp, got) || canonical(got).replace(/[\s-]/g, '') === canonical(exp).replace(/[\s-]/g, '') : false) : null);
   row.ok_structure_number = fieldCheck(kase.expected_structure_number, f.structure_number?.value);
   row.ok_street_name = fieldCheck(kase.expected_street_name, f.street_name?.value ?? f.route_number?.value);
   row.ok_zip = kase.expected_zip && !String(kase.expected_missing ?? '').includes('zip') ? fieldCheck(kase.expected_zip, f.zip?.source === 'typed' ? f.zip.value : '') : null;
