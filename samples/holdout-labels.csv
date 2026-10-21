@@ -1,0 +1,61 @@
+id,expected_structure_number,expected_street_name,label_note
+h01,13,Pio Rechani,
+h02,93,65 Infanteria,
+h03,111,Morse,
+h04,H1,5,
+h05,131,Barbosa,
+h06,64,Jose L Linares,
+h07,-,,shopping center with suites
+h08,100,Principal,
+h09,100,31,
+h10,15,Aduana,
+h11,1068,General Ramey,
+h12,5,173,
+h13,46,Jesus T. Piqero,garbled ñ kept as typed
+h14,20,Muqoz Rivera,garbled ñ kept as typed
+h15,-,,"""Calle No 14"" is unclear"
+h16,-,153,
+h17,-,183,
+h18,-,152,
+h19,-,198,
+h20,-,111,
+h21,-,181,
+h22,-,693,
+h23,,,"""33 Km 44.7"" is unclear"
+h24,601,Dr. Loyola,
+h25,-,2,
+h26,-,Casto Perez,
+h27,60,Barcelo,
+h28,118,Andres Arus Rivera,
+h29,B-5,Tabonuco,
+h30,GP12,Roberto Sanchez Vilella,
+h31,-,402,
+h32,-,Corchado,
+h33,-,5,
+h34,13,José De Diego,
+h35,555,Concepción Vera Ayala,also on Carr. 110
+h36,-,31,
+h37,N-9,H,
+h38,28,Muñoz Rivera,
+h39,V-1,16,
+h40,40,Muñoz Rivera,
+h41,-,128,
+h42,-,188,
+h43,-,2,
+h44,130,Carite,
+h45,-,,avenue and street both given
+h46,159,14 de Julio,
+h47,AD-10,,marginal road
+h48,-,Severo Arena,
+h49,-,140,
+h50,485,Amador,
+h51,-,1,
+h52,-,Marcelito Gotay,
+h53,77,Jesús T. Piñero,
+h54,400,,plaza
+h55,106,Piel Canela,
+h56,889,2,
+h57,-,,mall on an expressway
+h58,850,Arnaldo Bristol,
+h59,-,2,
+h60,4,Concepción,
