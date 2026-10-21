@@ -54,11 +54,12 @@ export function scoreRow(kase, result) {
   row.ok_compliance = kase.expected_compliance ? result.compliance === kase.expected_compliance : null;
   const exp = listOf(kase.expected_flags);
   const got = predictedFlags(result);
+  const flagsLabeled = kase.expected_flags !== undefined;
   row.expected_flags = [...exp].join(';');
   row.flags = [...got].join(';');
-  row.flag_tp = [...exp].filter((x) => got.has(x)).length;
-  row.flag_fn = [...exp].filter((x) => !got.has(x)).length;
-  row.flag_fp = [...got].filter((x) => !exp.has(x)).length;
+  row.flag_tp = flagsLabeled ? [...exp].filter((x) => got.has(x)).length : 0;
+  row.flag_fn = flagsLabeled ? [...exp].filter((x) => !got.has(x)).length : 0;
+  row.flag_fp = flagsLabeled ? [...got].filter((x) => !exp.has(x)).length : 0;
   const expMissing = listOf(kase.expected_missing);
   const gotMissing = new Set(result.missing_required ?? []);
   row.ok_missing = kase.expected_missing !== undefined && kase.expected_compliance !== 'Postal only'

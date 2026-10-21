@@ -1,0 +1,61 @@
+id,facility,address,municipio,zip,lat,lon,source_url
+f01,City hall (Casa Alcaldía) Barranquitas,Calle Muñoz Rivera No. 25,Barranquitas,,,,https://barranquitas.pr.gov/
+f02,City hall (Casa Alcaldía) Vieques,"Junction of Carlos LeBrun and Benítez Guzmán Streets Isabel Segunda, Vieques, Puerto Rico",Vieques,,18.1491263,-65.4412563,https://en.wikipedia.org/wiki/Casa_Alcald%C3%ADa_de_Vieques
+f03,City hall (Casa Alcaldía) Maunabo,Calle Santiago Iglesias #8,Maunabo,,18.006922,-65.899667,https://en.wikipedia.org/wiki/National_Register_of_Historic_Places_listings_in_eastern_Puerto_Rico
+f04,City hall (Casa Alcaldía) Arecibo,"Town square & José De Diego Avenue, Arecibo, Puerto Rico",Arecibo,,18.47250,-66.71556,https://en.wikipedia.org/wiki/Casa_Alcald%C3%ADa_de_Arecibo
+f05,Post office Adjuntas,"37 CALLE MUNOZ RIVERA, ADJUNTAS, PR 00601-9998",Adjuntas,00601-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f06,Post office Jayuya,"15 CALLE A BARCELO STE 2, JAYUYA, PR 00664-9998",Jayuya,00664-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f07,Post office Utuado,"41 AVE FERNANDO L RIBAS, UTUADO, PR 00641-9998",Utuado,00641-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f08,Post office Maricao,"9 CALLE ZUZUARREGUI FRNT, MARICAO, PR 00606-9998",Maricao,00606-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f09,Post office Ciales,"25 CARR 149, CIALES, PR 00638-9998",Ciales,00638-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f10,Post office Comerío,"37 CARR 778 STE 3, COMERIO, PR 00782-9998",Comerío,00782-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f11,Post office Culebra,"26 CALLE PEDRO MARQUEZ, CULEBRA, PR 00775-9800",Culebra,00775-9800,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f12,Post office Vieques,"STATE ROAD 200 KM 0.5, VIEQUES, PR 00765-9998",Vieques,00765-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f13,Post office Mercedita,"100 TURPEAUX IND PARK, MERCEDITA, PR 00715-9998",Ponce,00715-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f14,Post office Ángeles,"100 CARR 111, ANGELES, PR 00611-9998",Utuado,00611-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f15,Post office Toa Alta,"CARRETERA 165. K.10.H 5 BARRIO CONTORNO, TOA ALTA, PR 00953-9998",Toa Alta,00953-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f16,Post office Caparra Heights Station,"1400 ROOSEVELT AVE, STE 12, GUAYNABO, PR 00968-9998",Guaynabo,00968-9998,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f17,Post office Boquerón,"300 CARR 101, BOQUERON, PR 00622-9997",Cabo Rojo,00622-9997,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f18,Post office Palmer Branch,"23 CALLE PRINCIPAL, PALMER, PR 00721-9997",Río Grande,00721-9997,,,https://about.usps.com/who/legal/foia/documents/leased-facilities/pr.csv
+f19,Post office Vega Baja,"A10 CALLE 2, VEGA BAJA, PR 00693-9998",Vega Baja,00693-9998,,,https://about.usps.com/who/legal/foia/documents/owned-facilities/pr.csv
+f20,Post office Florida,"66 CALLE MUNOZ RIVERA, FLORIDA, PR 00650-9998",Florida,00650-9998,,,https://about.usps.com/who/legal/foia/documents/owned-facilities/pr.csv
+f21,Courthouse Adjuntas (Sala Superior),"Calle Rodolfo González (final) (al lado del Cuartel de la Policía), Adjuntas",Adjuntas,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f22,Courthouse Orocovis (Sala Superior),"9 Calle Hospital (Salida Villalba) (al lado del Cuartel de la Policía), Orocovis",Orocovis,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f23,Courthouse Utuado (Centro Judicial),"Carr. 611, Intersección Carr. 111, 24 Ave. Fernando L. Rivas Dominicci, Utuado",Utuado,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f24,Courthouse Corozal (Sala Municipal),"Bo. Cibuco (frente a Urb. Silva) Carr. 818, Km. 0.8, Corozal",Corozal,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f25,Courthouse San Juan (Centro Judicial),"Ave. Muñoz Rivera, Esq. Coll y Toste Pda. 37, Hato Rey",San Juan,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f26,Courthouse Sabana Grande (Sala Municipal),"Bo. Santana, Carr. 121, Km. 39.2, Sabana Grande",Sabana Grande,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f27,Courthouse Lajas (Sala Municipal),17 Calle Victoría (Frente a Plaza de Recreo),Lajas,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f28,Courthouse Isabela (Sala Municipal),"Bo. Mora, Carr. 2 Km. 110.9, Isabela (Marginal llegando a Isabela Mall)",Isabela,,,,https://poderjudicial.pr/Documentos/subastas/2025/25-16F-Anejo-I-DIRECCION-FISICA.pdf
+f29,University campus UPR Utuado,"Carr 123 km 52.2 Bo. Salto Arriba, Utuado PR 00641",Utuado,00641,,,https://www.uprutuado.edu/
+f30,University campus UPR Cayey,"Ave. Antonio R. Barceló #205, Cayey, PR 00736",Cayey,00736,,,https://www.cayey.upr.edu/
+f31,University campus UPR Aguadilla,"Calle Belt, Antigua Base Ramey, Aguadilla, P.R. 00604",Aguadilla,00604,,,https://www.upr.edu/upr_aguadilla/
+f32,University campus UPR Humacao,"Avenida José E Aguiar Aramburu, Carr. 908 KM 1.2, Humacao, P.R. 00792",Humacao,00792,,,https://www.upr.edu/upr_humacao/
+f33,University campus UPR Bayamón,"Carr. 174 Núm. 170 Industrial Minillas, Bayamón, Puerto Rico 00959-1919",Bayamón,00959-1919,,,https://www.upr.edu/upr_bayamon/
+f34,CDT Jayuya,"Calle Rosanta Aulet, Jayuya, PR 00664",Jayuya,00664,18.21906,-66.59525,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f35,CDT Las Marías,"Carr. 119, Km 27.4, Las Marías, PR 00670",Las Marías,00670,18.25847,-66.98595,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f36,Community health center Culebra (Menonita),"Calle William Font Final, Culebra, PR 00775",Culebra,00775,18.30286,-65.30346,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f37,Hospital General Castañer,"Carr. 135, Km. 64.2, Castañer, PR 00631",Lares,00631,18.18101,-66.833182,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f38,Hospital Menonita Aibonito,"Calle José C. Vázquez, Carr. 726, Urb. Vila Rosales, Bo. Caonillas, Aibonito, PR 00705",Aibonito,00705,18.14349,-66.261772,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f39,Public hospital Hospital Industrial (Centro Médico),"Bo. Monacillos, Centro Médico, Río Piedras, PR 00935",San Juan,00935,18.39587,-66.073631,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f40,Public hospital UPR Carolina,"Ave. 65 Infantería, Carr. 3, Km. 8.3, Carolina, PR, 00987",Carolina,00987,18.38847,-65.971899,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f41,CDT Levittown,"Calle Lizzie Graham HF 16, Levittown, Toa Baja, PR 00949",Toa Baja,00949,18.437485,-66.172531,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f42,Community health center Adjuntas (Policlínica),"Carr. 123, #44, Km. 35.7, Bo. Garzas, Adjuntas, PR 00601 (Antiguo local de Fomento)",Adjuntas,00601,18.162974,-66.721832,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f43,Health center Guánica,"Carr. 116, Km. 27.7, Guánica, PR 00647",Guánica,00647,17.97345,-66.91134,https://www.salud.pr.gov/CMS/DOWNLOAD/3044
+f44,CDT Manatí (Policlínica),"PR-685, Km 1.9, Bo. Tierras Nuevas, Manatí, PR 00674",Manatí,00674,18.4422,-66.5008,https://www.salud.pr.gov/menuInst/download/277
+f45,Walgreens Juana Díaz,"STATE RD. 149 AND STATED RD. 584 EST DE, Juana Diaz, PR 00795",Juana Díaz,00795,18.0446642,-66.50789314,https://www.walgreens.com/locator/walgreens-state+rd.+149+and+stated+rd.+584+est+de-juana+diaz-pr-00795/id=15462
+f46,Walgreens Morovis,"200 CARR 137, Morovis, PR 00687",Morovis,00687,18.32500327,-66.4017482,https://www.walgreens.com/locator/walgreens-200+carr+137-morovis-pr-00687/id=202
+f47,Walgreens Condado,"1130 AVE ASHFORD, Condado, PR 00907",San Juan,00907,18.45594185,-66.07192096,https://www.walgreens.com/locator/walgreens-1130+ave+ashford-condado-pr-00907/id=217
+f48,Home Depot Mayagüez,"State Hwy #2, K.m. 149.5 Western Plaza, Mayaguez, PR 00682",Mayagüez,00682,,,https://www.homedepot.com/l/Mayaguez/PR/Mayaguez/00682/6407
+f49,Home Depot Hatillo,"Km 84.3 - Rd. Pr 2, Hatillo, PR 00659",Hatillo,00659,,,https://www.homedepot.com/l/Hatillo/PR/Hatillo/00659/6412
+f50,Bank Banco Popular Maricao,"Zuzuaregui Corner Baldorioty St, Maricao, PR 00606",Maricao,00606,18.172073,-66.942268,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20CITY%3A%22Maricao%22&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=10
+f51,Bank Banco Popular Patillas,"33 Luis Munoz Rivera & Iglesias Streets, Patillas, PR 00723",Patillas,00723,18.031849,-66.012175,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20(CITY%3A%22Patillas%22%20OR%20CITY%3A%22Hormigueros%22%20OR%20CITY%3A%22Aguada%22)&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=20
+f52,Bank Banco Popular Hormigueros,"12 Mateo Fajardo 14, Hormigueros, PR 00660",Hormigueros,00660,18.139435,-67.127459,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20(CITY%3A%22Patillas%22%20OR%20CITY%3A%22Hormigueros%22%20OR%20CITY%3A%22Aguada%22)&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=20
+f53,Bank FirstBank Aguada,"Corner Of Nativo Alers & Pr-411, Aguada, PR 00602",Aguada,00602,18.360290000000134,-67.1748,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20(CITY%3A%22Patillas%22%20OR%20CITY%3A%22Hormigueros%22%20OR%20CITY%3A%22Aguada%22)&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=20
+f54,Bank FirstBank Río Hondo,"Ave. Comerio Esq. Luis Pales Matos, Toa Baja, PR 00957",Bayamón,00957,18.368841,-66.187401,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20(OFFNAME%3A%22RIO%20HONDO%20BRANCH%22%20OR%20OFFNAME%3A%22CONDADO%20GALLERY%20BRANCH%22)&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=20
+f55,Bank Banco Popular Condado Gallery,"100 Ave Roberto H Todd, Santurce, PR 00907",San Juan,00907,18.452278007032476,-66.07403596214672,https://api.fdic.gov/banks/locations?filters=STALP%3APR%20AND%20(OFFNAME%3A%22RIO%20HONDO%20BRANCH%22%20OR%20OFFNAME%3A%22CONDADO%20GALLERY%20BRANCH%22)&fields=NAME%2COFFNAME%2CADDRESS%2CCITY%2CCOUNTY%2CZIP%2CLATITUDE%2CLONGITUDE&limit=20
+f56,Fire station Ceiba (historic),"226 Lauro Piñero Avenue, Ceiba, Puerto Rico",Ceiba,,18.26639,-65.64778,https://en.wikipedia.org/wiki/Ceiba_Fire_Station
+f57,Fire station Yabucoa (historic),"22 Luis Muñoz Rivera St., Yabucoa, Puerto Rico",Yabucoa,,18.05194,-65.87722,https://en.wikipedia.org/wiki/Yabucoa_Fire_Station
+f58,Public library Ponce (Biblioteca Municipal),"Boulevard Miguel Pou, Barrio San Antón, Ponce, Puerto Rico, Puerto Rico",Ponce,,18.01223,-66.60339,https://en.wikipedia.org/wiki/Ponce_Municipal_Library
+f59,Federal office US Probation (Federico Degetau Federal Bldg),"Edificio Federal Federico Degetau, 150 Avenida Chardón, Oficina 225, San Juan, PR 00918",San Juan,00918,,,https://www.prp.uscourts.gov/offices/hato-rey
+f60,Public school library Salinas (Ana Hernández Usera),"Carr 3 Km 156 Hm 0 Bo Coqui, Salinas, Puerto Rico 00751",Salinas,00751,17.974899,-66.292045,https://librarytechnology.org/library/189056

@@ -33,7 +33,7 @@ export async function runBatch({ rows, addressCol, idCol, modes, concurrency, si
       const id = (idCol && job.row[idCol]) || `row-${job.i + 1}`;
       let entry;
       try {
-        const result = await runOne(input, job.mode, signal);
+        const result = await runOne(input, job.mode, signal, job.row);
         entry = { id, i: job.i, row: job.row, mode: job.mode, result };
       } catch (err) {
         if (signal.aborted) break;

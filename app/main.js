@@ -258,7 +258,8 @@ function loadCsv(text) {
   $('csv-col').innerHTML = csv.header.map((h) => `<calcite-option value="${esc(h)}" ${h === guess ? 'selected' : ''}>${esc(h)}</calcite-option>`).join('');
   $('csv-limit').value = String(Math.min(csv.rows.length, 200));
   $('csv-map').hidden = false;
-  $('csv-info').textContent = `${csv.rows.length} rows · ${hasLabels(csv.header) ? 'labeled: each run will be scored' : 'no expected_* columns: results only'}`;
+  const formCol = csv.header.some((h) => /^form_municipio$/i.test(h));
+  $('csv-info').textContent = `${csv.rows.length} rows · ${hasLabels(csv.header) ? 'labeled: each run will be scored' : 'no expected_* columns: results only'}${formCol ? ' · form_municipio used as the form pick' : ''}`;
 }
 
 $('batch-run').addEventListener('click', async () => {
@@ -279,11 +280,13 @@ $('batch-run').addEventListener('click', async () => {
   $('batch-report').innerHTML = '';
   let cost = 0; let errors = 0; let lastPaint = 0;
   const started = Date.now();
-  const runOne = (input, mode, signal) => {
+  const muniCol = csv.header.find((h) => /^(form_municipio|form_municipality)$/i.test(h)) ?? '';
+  const runOne = (input, mode, signal, row) => {
     // Identical inputs in one run are answered once per mode, so duplicates are not billed twice.
-    const k = `${mode}|${input.trim().toLowerCase()}`;
+    const formMunicipio = muniCol ? row[muniCol] ?? '' : '';
+    const k = `${mode}|${formMunicipio}|${input.trim().toLowerCase()}`;
     if (!runCache.has(k)) {
-      runCache.set(k, validateAddress(input, { mode, provider: MODES[mode].usesModel ? provider : null, geocoders, gis, usng, settings: pipelineSettings(), signal }));
+      runCache.set(k, validateAddress(input, { mode, provider: MODES[mode].usesModel ? provider : null, geocoders, gis, usng, settings: pipelineSettings(), signal, formMunicipio }));
     }
     return runCache.get(k);
   };
