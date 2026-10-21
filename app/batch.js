@@ -95,15 +95,31 @@ function armLabel(arm) {
   return [MODES[mode]?.label ?? mode, model !== '—' ? model : ''].filter(Boolean).join(' · ');
 }
 
+const MODE_SHORT = { rules: 'Rules', ai_after: 'AI after', ai_first: 'AI first' };
+const STATUS_CLASS = { 'Compliant': 'ok', 'Compliant with warnings': 'warn', 'Not compliant': 'block', 'Needs review': 'review', 'Postal only': 'postal' };
+
+/** One row per input, with each mode's answer side by side, so modes compare at a glance. */
 export function renderBatchList(entries, filter) {
-  const list = entries.filter((e) => filter === 'All' || (e.error ? filter === 'Errors' : filter === 'Not located' ? e.result.location === 'none' : e.result.compliance === filter));
-  return list.slice(0, 500).map((e) => {
-    const idx = entries.indexOf(e);
-    if (e.error) return `<div class="brow" data-idx="${idx}"><div><div class="in">${esc(e.row ? Object.values(e.row)[0] : '')}</div><div class="tag">${esc(MODES[e.mode]?.label)} · error</div></div><div class="st">${esc(e.error.slice(0, 60))}</div></div>`;
-    const r = e.result;
-    return `<div class="brow" data-idx="${idx}"><div><div class="in" title="${esc(r.input)}">${esc(r.input)}</div><div class="tag">${esc(e.id)} · ${esc(MODES[r.mode]?.label)}${r.cost ? ` · ${fmtCost(r.cost)}` : ''}</div></div>
-      <div class="st"><span class="sv">${esc(r.compliance)}</span><span class="tag">${esc(r.location_label)}</span></div></div>`;
-  }).join('') + (list.length > 500 ? `<div class="brow"><div class="tag">Showing 500 of ${list.length}. Export for the rest.</div></div>` : '');
+  const match = (e) => filter === 'All' || (e.error ? filter === 'Errors' : filter === 'Not located' ? e.result.location === 'none' : e.result.compliance === filter);
+  const groups = new Map();
+  entries.forEach((e, idx) => {
+    if (!groups.has(e.i)) groups.set(e.i, []);
+    groups.get(e.i).push({ e, idx });
+  });
+  const shown = [...groups.values()].filter((g) => g.some(({ e }) => match(e))).sort((a, b) => a[0].e.i - b[0].e.i);
+  return shown.slice(0, 400).map((g) => {
+    const first = g[0].e;
+    const input = first.result?.input ?? String(Object.values(first.row ?? {})[0] ?? '');
+    const differ = new Set(g.filter(({ e }) => e.result).map(({ e }) => `${e.result.compliance}|${e.result.location}|${e.result.record.municipality}`)).size > 1;
+    const chips = g.sort((a, b) => Object.keys(MODE_SHORT).indexOf(a.e.mode) - Object.keys(MODE_SHORT).indexOf(b.e.mode)).map(({ e, idx }) => {
+      if (e.error) return `<button type="button" class="mchip err" data-idx="${idx}">${esc(MODE_SHORT[e.mode])}: error</button>`;
+      const r = e.result;
+      return `<button type="button" class="mchip s-${STATUS_CLASS[r.compliance] ?? ''}" data-idx="${idx}" title="${esc(`${r.compliance} · ${r.location_label}${r.record.municipality ? ` · ${r.record.municipality}` : ''}`)}">
+        <b>${esc(MODE_SHORT[e.mode])}</b> ${esc(r.compliance === 'Compliant with warnings' ? 'Warnings' : r.compliance)} · ${esc(r.location_label)}</button>`;
+    }).join('');
+    return `<div class="brow${differ ? ' differ' : ''}" data-idx="${g[0].idx}"><div class="in" title="${esc(input)}">${esc(input)}</div>
+      <div class="tag">${esc(first.id)}${differ ? ' · <span class="dif">modes differ</span>' : ''}</div><div class="mchips">${chips}</div></div>`;
+  }).join('') + (shown.length > 400 ? `<div class="brow"><div class="tag">Showing 400 of ${shown.length}. Export for the rest.</div></div>` : '');
 }
 
 export const FILTERS = ['All', 'Compliant', 'Compliant with warnings', 'Not compliant', 'Needs review', 'Postal only', 'Not located', 'Errors'];

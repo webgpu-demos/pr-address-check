@@ -150,7 +150,15 @@ pre.json { max-height: 280px; overflow: auto; background: var(--card); border: 1
 .filters button[aria-selected="true"] { background: var(--ink); color: #fff; }
 .filters .n { font-family: var(--mono); margin-left: 4px; opacity: .8; }
 .batch-list { max-height: 34vh; overflow: auto; margin: 0 16px; border: 1px solid var(--rule); border-top: 0; background: var(--card); }
-.brow { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--rule-2); cursor: pointer; font-size: 12px; }
+.brow { display: block; padding: 7px 8px; border-bottom: 1px solid var(--rule-2); cursor: pointer; font-size: 12px; }
+.brow.differ { box-shadow: inset 3px 0 0 var(--warn); }
+.brow .dif { color: var(--warn); }
+.mchips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mchip { font: 11px var(--sans); padding: 2px 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink-2); cursor: pointer; text-align: left; }
+.mchip b { font-weight: 600; color: var(--ink); }
+.mchip.s-ok { border-color: #b8d3be; } .mchip.s-warn { border-color: #e3cf9f; } .mchip.s-block { border-color: var(--ink-3); }
+.mchip.s-review { border-color: var(--alert); color: var(--alert); } .mchip.err { border-color: var(--alert); }
+.mchip:hover { background: var(--data-wash); }
 .brow:hover { background: var(--data-wash); }
 .brow .in { font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brow .tag { font: 10px var(--mono); color: var(--ink-3); }
