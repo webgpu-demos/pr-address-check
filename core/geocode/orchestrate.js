@@ -55,7 +55,12 @@ export function buildQueries(input, comps, modelPlan = [], target = 'census') {
   push(input, 'raw');
   for (const p of modelPlan) if (p.target === target) push(p.query, 'model');
   push(composeQuery(comps, { style: target }), 'parsed');
-  return out.slice(0, 3);
+  // A house number and a KM on the same route: ask for the KM marker too, to choose among same-numbered houses.
+  const route = value(comps, 'route_number'); const km = value(comps, 'km_hm'); const muni = municipalityOf(comps);
+  if (target === 'esri' && route && km && value(comps, 'structure_number')) {
+    push(`Carr ${route} KM ${km}${muni ? `, ${muni.name}` : ''}, Puerto Rico`, 'km');
+  }
+  return out.slice(0, 4);
 }
 
 /** Census answers when it finds the typed number on the typed street; otherwise Esri is asked. */
@@ -200,7 +205,17 @@ export function metersBetween(a, b) {
 /** Pick the best candidate; mark ambiguity when two strong, equally consistent answers sit far apart. */
 export function pickBest(candidates, comps) {
   if (!candidates.length) return { best: null, ambiguous: false, ranked: [] };
-  const ranked = candidates.map((c) => rankCandidate(c, comps)).sort((a, b) => b.rank - a.rank);
+  const ranked = candidates.map((c) => rankCandidate(c, comps));
+  // The same house number repeats along long routes. When the typed KM marker was found, prefer the house near it.
+  const kmRef = ranked.find((c) => c.precision === 'km' && c.consistency.number === true && !c.conflict);
+  if (kmRef) {
+    for (const c of ranked) {
+      if (c === kmRef || (PRECISION_RANK[c.precision] ?? 0) < 3) continue;
+      c.kmDistance = Math.round(metersBetween(c, kmRef));
+      if (c.kmDistance > 2000) { c.rank -= 150; c.farFromKm = true; }
+    }
+  }
+  ranked.sort((a, b) => b.rank - a.rank);
   const best = ranked[0];
   const rival = ranked.find((c) => c !== best && metersBetween(c, best) > 500);
   const ambiguous = Boolean(rival && best.effectivePrecision >= 3 && rival.effectivePrecision === best.effectivePrecision

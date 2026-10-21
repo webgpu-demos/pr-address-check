@@ -281,3 +281,13 @@ test('a place the model mapped to its municipio keeps what was typed', () => {
   assert.equal(city.role, 'postal_city');
   assert.ok(g.ok);
 });
+
+test('with a house number and a KM on the same route, the house near the KM marker wins', async () => {
+  const far = { matched: '44 Carr 123, Barrio Garzas, Adjuntas, 00601', lon: -66.60, lat: 18.20, precision: 'rooftop', addrType: 'PointAddress',
+    parts: { number: '44', street: 'Carr 123', streetName: 'Carr 123', municipio: 'Adjuntas', zip: '00601' } };
+  const near = { ...far, lon: -66.729, lat: 18.166, precision: 'interpolated', addrType: 'StreetAddress' };
+  const km = { matched: 'Carr 123 KM 35.7, Adjuntas, 00601', lon: -66.7299, lat: 18.1670, precision: 'km', addrType: 'DistanceMarker',
+    parts: { number: '35.7', street: 'Carr 123', streetName: 'Carr 123', municipio: 'Adjuntas', zip: '00601' } };
+  const r = await validateAddress('Carr. 123 #44 Km. 35.7, Adjuntas PR 00601', ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': [far, near, km] }) }));
+  assert.equal(r.best.lat, 18.166);
+});
