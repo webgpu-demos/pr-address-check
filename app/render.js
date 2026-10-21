@@ -16,7 +16,7 @@ const ROLE = { municipality: 'municipio', postal_city: 'postal city' };
 const COMPLIANCE_CLASS = {
   'Compliant': 's-ok', 'Compliant with warnings': 's-warn', 'Not compliant': 's-block', 'Needs review': 's-review', 'Postal only': 's-postal',
 };
-const LOCATION_CLASS = { rooftop: 'loc-good', interpolated: 'loc-good', street: 'loc-weak', area: 'loc-weak', ambiguous: 'loc-bad', conflict: 'loc-bad', outside: 'loc-none', none: 'loc-none' };
+const LOCATION_CLASS = { rooftop: 'loc-good', interpolated: 'loc-good', km: 'loc-good', street: 'loc-weak', area: 'loc-weak', ambiguous: 'loc-bad', conflict: 'loc-bad', outside: 'loc-none', none: 'loc-none' };
 
 /** The input with each recognized part underlined and labeled. Text nobody claimed stays plain. */
 export function annotate(input, components) {
@@ -55,7 +55,7 @@ export function renderResult(r, { required = [] } = {}) {
   const typedHtml = annotate(r.input, r.components);
   const missing = new Set(r.missing_required ?? []);
 
-  const reasons = r.reasons.filter((x) => x.severity !== 'info' || x.source === 'model' || ['POSTAL_ONLY', 'GATE_DROPPED', 'MODEL_FALLBACK'].includes(x.code));
+  const reasons = r.reasons.filter((x) => x.severity !== 'info' || x.source === 'model' || ['POSTAL_ONLY', 'GATE_DROPPED', 'MODEL_FALLBACK', 'COARSE_POINT_ELSEWHERE'].includes(x.code));
   const reasonHtml = reasons.map((x) => `<li class="r-${x.severity}"><span class="dot"></span><span>${esc(x.text)}<span class="code">${esc(x.code)}</span>${x.maturity === 'experimental' ? '<span class="exp" title="Experimental check: shown, not yet trusted">exp</span>' : ''}</span></li>`).join('');
 
   const f = r.fields;

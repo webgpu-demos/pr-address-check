@@ -89,8 +89,10 @@ export async function validateAddress(rawInput, ctx) {
 
   // The municipality picked in the form is typed input too. The point still decides.
   const formMuni = findMunicipio(formMunicipio);
-  if (formMuni && !comps.some((c) => c.name === 'city' && c.role === 'municipality')) {
-    comps = [...comps.map((c) => (c.name === 'city' && c.role === 'unknown' && findMunicipio(c.value)?.name !== formMuni.name ? { ...c, role: 'postal_city' } : c)),
+  if (formMuni) {
+    // The form pick is the typed municipality. A different place in the text becomes the postal city.
+    comps = [...comps.map((c) => (c.name === 'city' && c.role !== 'postal_city' && findMunicipio(c.value)?.name !== formMuni.name ? { ...c, role: 'postal_city' } : c))
+      .filter((c) => !(c.name === 'city' && findMunicipio(c.value)?.name === formMuni.name && c.role === 'municipality')),
       { name: 'city', value: formMuni.name, source_text: formMuni.name, span: null, source: 'form', role: 'municipality' }];
   }
 

@@ -113,7 +113,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
       if (['conflict', 'ambiguous', 'outside'].includes(r.location)) {
         // Not a location we stand behind: an open vermilion ring, never the solid blue point.
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2.2 } } }));
-      } else if (['street', 'area'].includes(r.location)) {
+      } else if (['street', 'area'].includes(r.location) || (r.location !== 'none' && r.record.lat === '')) {
         // Coarse: an open blue ring, sized to say "somewhere around here".
         const size = r.location === 'area' ? 40 : 24;
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size, color: [29, 95, 191, 0.08], outline: { color: [29, 95, 191, 0.9], width: 1.6, style: 'dash' } } }));

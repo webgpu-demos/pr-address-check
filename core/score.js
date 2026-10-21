@@ -34,6 +34,7 @@ export function scoreRow(kase, result) {
     location: result.location_label, municipality: result.record.municipality, expected_municipio: kase.expected_municipio ?? '',
     distance_m: '', bucket: '', cost: result.cost ?? '', latency_ms: result.latency_ms ?? '',
     geocode_stage: result.geocode_stage, fallback: result.fallback?.used ? result.fallback.reason : '',
+    claim: ['rooftop', 'interpolated', 'km'].includes(result.location) ? result.location : '',
   };
   const lat = Number(kase.expected_lat); const lon = Number(kase.expected_lon);
   if (kase.expected_lat !== '' && kase.expected_lat !== undefined && Number.isFinite(lat) && Number.isFinite(lon)) {
@@ -97,6 +98,10 @@ function pct(values, p) {
 export function summarize(rows) {
   const located = rows.filter((r) => r.bucket);
   const buckets = Object.fromEntries(BUCKETS.map((b) => [b.id, rate(located, (r) => r.bucket === b.id)]));
+  // Answers the app presents as address-level (address point, street range, KM marker), scored on their own:
+  // a confident wrong location is the worst outcome.
+  const claims = located.filter((r) => r.claim);
+  const claimBuckets = Object.fromEntries(BUCKETS.slice(0, 3).map((b) => [b.id, rate(claims, (r) => r.bucket === b.id)]));
   const tp = rows.reduce((s, r) => s + r.flag_tp, 0);
   const fn = rows.reduce((s, r) => s + r.flag_fn, 0);
   const fp = rows.reduce((s, r) => s + r.flag_fp, 0);
@@ -107,6 +112,8 @@ export function summarize(rows) {
   return {
     n: rows.length,
     buckets,
+    claimBuckets,
+    claimShare: rate(located, (r) => Boolean(r.claim)),
     medianDistance: pct(located.map((r) => Number(r.distance_m)).filter((d) => d !== 0 || true), 50),
     fields: {
       structure_number: rate(rows, (r) => r.ok_structure_number),

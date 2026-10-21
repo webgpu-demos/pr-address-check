@@ -7,7 +7,7 @@ export const PR_EXTENT = { xmin: -67.95, ymin: 17.85, xmax: -65.2, ymax: 18.55 }
 
 const PRECISION = {
   PointAddress: 'rooftop', Subaddress: 'rooftop',
-  StreetAddress: 'interpolated', StreetAddressExt: 'interpolated', DistanceMarker: 'interpolated',
+  StreetAddress: 'interpolated', StreetAddressExt: 'interpolated', DistanceMarker: 'km',
   StreetInt: 'street', StreetBetween: 'street', StreetName: 'street', StreetMidBlock: 'street',
   POI: 'area', Locality: 'area', PostalLoc: 'area', PostalExt: 'area', Postal: 'area', Nbrhd: 'area',
 };

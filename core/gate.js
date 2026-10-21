@@ -61,6 +61,10 @@ export function runGate(input, rawModelData, rulesParse) {
   // A lone municipio name is not known to be a postal city; only the point can say that.
   const cities = components.filter((c) => c.name === 'city');
   if (cities.length === 1 && cities[0].role === 'postal_city' && findMunicipio(cities[0].value)) cities[0].role = 'unknown';
+  // "Municipality" needs the text to say so ("X Municipio") or a second place to contrast with.
+  for (const c of cities) {
+    if (c.role === 'municipality' && !/municipio/i.test(c.source_text) && cities.length === 1) c.role = 'unknown';
+  }
 
   // Structural flags come from code over the verified parts; the model's flags must agree or are set aside.
   const derived = derivedFlags(input, components);

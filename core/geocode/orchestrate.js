@@ -3,7 +3,7 @@
 import { canonical, sameValue, fold } from '../text.js';
 import { findMunicipio } from '../vocab.js';
 
-export const PRECISION_RANK = { rooftop: 4, interpolated: 3, street: 2, area: 1, none: 0 };
+export const PRECISION_RANK = { rooftop: 4, interpolated: 3, km: 3, street: 2, area: 1, none: 0 };
 
 export function value(comps, name, role) {
   const list = comps.filter((c) => c.name === name && (!role || c.role === role));
@@ -114,7 +114,7 @@ export function consistency(c, comps) {
   const out = { number: null, street: null, zip: null, municipio: null, urbanization: null, barrio: null };
   const matched = canonical(c.matched);
   const km = value(comps, 'km_hm');
-  if (c.addrType === 'DistanceMarker') {
+  if (c.addrType === 'DistanceMarker' || c.precision === 'km') {
     // A KM marker match: its "house number" is the kilometer.
     out.number = km ? Number(c.parts.number) === Number(km) : null;
   } else if (num) {

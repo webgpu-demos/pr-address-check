@@ -5,15 +5,15 @@ import { sameValue, fold } from './text.js';
 import { municipalityOf } from './geocode/orchestrate.js';
 
 export const COMPLIANCE = ['Postal only', 'Needs review', 'Not compliant', 'Compliant with warnings', 'Compliant'];
-const PRECISION_ORDER = { rooftop: 4, interpolated: 3, street: 2, area: 1, none: 0 };
+const PRECISION_ORDER = { rooftop: 4, interpolated: 3, km: 3, street: 2, area: 1, none: 0 };
 const SEVERITY_STATUS = { review: 'Needs review', block: 'Not compliant', warn: 'Compliant with warnings' };
 
 export const LOCATION_LABEL = {
-  rooftop: 'Address point', interpolated: 'Street range', street: 'Street only', area: 'Area only',
+  rooftop: 'Address point', interpolated: 'Street range', km: 'KM marker', street: 'Street only', area: 'Area only',
   ambiguous: 'Ambiguous', conflict: 'Conflicting match', outside: 'Outside Puerto Rico', none: 'Not located',
 };
 // Location reasons describe where the point landed. They set the location status, never compliance.
-const LOCATION_CODES = new Set(['NOT_LOCATED', 'OUTSIDE_PR', 'LOW_PRECISION', 'AMBIGUOUS_MATCH', 'LOCATION_CONFLICT', 'BARRIO_DIFFERS', 'ZIP_ZCTA_DIFFERS']);
+const LOCATION_CODES = new Set(['COARSE_POINT_ELSEWHERE', 'NOT_LOCATED', 'OUTSIDE_PR', 'LOW_PRECISION', 'AMBIGUOUS_MATCH', 'LOCATION_CONFLICT', 'BARRIO_DIFFERS', 'ZIP_ZCTA_DIFFERS']);
 
 const FLAG_TEXT = {
   KM_PRESENT: ['warn', 'KM is extra detail; the standard expects a structure number.'],
@@ -119,7 +119,15 @@ export function buildResult(x) {
   const located = Boolean(best) && place?.inPR;
   const precision = best ? best.precision : 'none';
   // usable: the point names a place we can record. trusted: precise enough to judge the typed address against.
-  const usable = located && !best.conflict && !x.ambiguous;
+  // A coarse point is a street or area centroid; when the geocoder itself names another municipio, the point
+  // is not evidence of where the address is, so its municipio is not recorded.
+  const candMuni = findMunicipio(best?.parts?.municipio);
+  const coarseDisagrees = located && (best.effectivePrecision ?? 0) < 3 && candMuni && place.municipio && candMuni.name !== place.municipio.name;
+  const usable = located && !best.conflict && !x.ambiguous && !coarseDisagrees;
+  if (coarseDisagrees) {
+    reasons.push({ code: 'COARSE_POINT_ELSEWHERE', severity: 'info', maturity: 'experimental', source: 'map',
+      text: `The ${best.effectivePrecision === 2 ? 'street' : 'area'} match is placed in ${place.municipio.name}, but the geocoder says ${candMuni.name}; no municipio recorded from it.` });
+  }
   const precisionOk = usable && (best.effectivePrecision ?? 0) >= 3;
   const trusted = precisionOk;
 
