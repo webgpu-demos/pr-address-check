@@ -107,8 +107,14 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
     }
     if (r.best) {
       const pt = new Point({ longitude: r.best.lon, latitude: r.best.lat });
-      result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 22, color: [29, 95, 191, 0.14], outline: { color: [29, 95, 191, 0], width: 0 } } }));
-      result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 11, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2 } } }));
+      const doubtful = ['conflict', 'ambiguous', 'outside'].includes(r.location);
+      if (doubtful) {
+        // Not a location we stand behind: an open vermilion ring, never the solid blue point.
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2.2 } } }));
+      } else {
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 22, color: [29, 95, 191, 0.14], outline: { color: [29, 95, 191, 0], width: 0 } } }));
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 11, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2 } } }));
+      }
       const zoom = { rooftop: 17, interpolated: 16, street: 15, area: 13 }[r.best.precision] ?? 14;
       goTo({ target: pt, zoom }, { duration: 600 });
     } else if (shapes.municipio) {
@@ -122,7 +128,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
 
   function showBatch(rows) {
     if (layers.batch) { map.remove(layers.batch); layers.batch = null; }
-    const pts = rows.map((row, i) => ({ row, i })).filter(({ row }) => row.result?.best && row.result.location !== 'outside');
+    const pts = rows.map((row, i) => ({ row, i })).filter(({ row }) => row.result?.best && row.result.record.lat !== '');
     if (!pts.length) return;
     const graphics = pts.map(({ row, i }) => new Graphic({
       geometry: new Point({ longitude: row.result.best.lon, latitude: row.result.best.lat }),

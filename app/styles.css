@@ -82,6 +82,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 16px 0 4px; }
 .status.loc-good .v { color: var(--data); }
 .status.loc-weak .v { color: var(--warn); }
 .status.loc-none { background: var(--rule-2); }
+.status.loc-bad { background: var(--alert-wash); } .status.loc-bad .v { color: var(--alert); }
 .meta { margin: 6px 16px 0; font: 11px var(--mono); color: var(--ink-3); display: flex; gap: 10px; flex-wrap: wrap; }
 .stale { margin: 8px 16px 0; font-size: 12px; color: var(--alert); }
 

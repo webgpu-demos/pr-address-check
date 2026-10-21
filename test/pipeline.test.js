@@ -125,11 +125,24 @@ test('Census answers first; Esri is skipped when Census matches number and stree
 });
 
 test('typed municipio that disagrees with the point needs review', async () => {
-  const far = [{ ...ESRI_HIT[0], lon: -66.07, matched: '45 Calle Lares, San Juan, 00926', parts: { ...ESRI_HIT[0].parts, municipio: 'San Juan', zip: '00926' } }];
+  const far = [{ ...ESRI_HIT[0], lon: -66.07, matched: '45 Calle Lares, San Juan, 00969', parts: { ...ESRI_HIT[0].parts, municipio: 'San Juan', zip: '00969' } }];
   const r = await validateAddress('45 Calle Lares, Guaynabo PR 00969', ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': far }) }));
   assert.equal(r.record.municipality, 'San Juan');
   assert.ok(r.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT'));
   assert.equal(r.compliance, 'Needs review');
+});
+
+test('a match in another urbanización, ZIP and municipio is a conflict, not a location', async () => {
+  const other = [{ ...ESRI_HIT[0], lon: -66.07, matched: '45 Calle Lares, Urb Pérez Morris, San Juan, 00917',
+    parts: { ...ESRI_HIT[0].parts, municipio: 'San Juan', zip: '00917' } }];
+  const r = await validateAddress(INPUT, ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': other }) }));
+  assert.equal(r.location, 'conflict');
+  assert.equal(r.record.municipality, '');
+  assert.equal(r.record.lat, '');
+  assert.ok(r.record.candidate_lat);
+  assert.ok(r.reasons.some((x) => x.code === 'LOCATION_CONFLICT' && x.scope === 'location'));
+  assert.ok(!r.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT'));
+  assert.equal(r.record.full_address, '45 Calle Lares, Guaynabo, PR 00969');
 });
 
 test('postal city with a matching ZIP is a warning, not a conflict', async () => {

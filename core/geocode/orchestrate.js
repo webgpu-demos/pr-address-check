@@ -107,8 +107,9 @@ export function consistency(c, comps) {
   const num = value(comps, 'structure_number');
   const name = value(comps, 'route_number') || value(comps, 'street_name');
   const zip = value(comps, 'zip');
+  const urb = value(comps, 'urbanization');
   const muni = municipalityOf(comps);
-  const out = { number: null, street: null, zip: null, municipio: null };
+  const out = { number: null, street: null, zip: null, municipio: null, urbanization: null };
   const matched = canonical(c.matched);
   if (num) {
     const n = canonical(num).replace(/\s|-/g, '');
@@ -125,7 +126,21 @@ export function consistency(c, comps) {
     out.municipio = sameValue(c.parts.municipio || '', muni.name) || sameValue(c.parts.city || '', muni.name)
       || fold(c.matched).includes(fold(muni.name)) ? true : null; // a different postal city is not proof of a miss
   }
+  // Urbanización: the candidate names one (Esri "Urb X" in the match, Census urb) and it is not the typed one.
+  const candUrb = c.parts.urb || (/\burb\.?\s+([^,]+)/i.exec(c.matched)?.[1] ?? '');
+  if (urb && candUrb) {
+    const a = canonical(urb); const b = canonical(candUrb);
+    out.urbanization = a.includes(b) || b.includes(a);
+  }
   return out;
+}
+
+/** The candidate names a different place: two independent misses, or a wrong ZIP in another municipio. */
+export function isConflict(c, k, comps) {
+  const muni = municipalityOf(comps);
+  const otherMuni = Boolean(muni && c.parts.municipio && findMunicipio(c.parts.municipio) && !sameValue(c.parts.municipio, muni.name));
+  const misses = [k.zip, k.urbanization].filter((v) => v === false).length;
+  return misses >= 2 || (k.zip === false && otherMuni) || (k.urbanization === false && otherMuni);
 }
 
 export function rankCandidate(c, comps) {
@@ -134,8 +149,10 @@ export function rankCandidate(c, comps) {
   const misses = Object.values(k).filter((v) => v === false).length;
   // A rooftop hit on the wrong house number is worse than a street-range hit on the right one.
   const precision = PRECISION_RANK[c.precision] ?? 0;
-  const effective = k.number === false && precision >= 3 ? 2 : precision;
-  return { ...c, consistency: k, effectivePrecision: effective, rank: effective * 100 + hits * 12 - misses * 20 + Math.min(c.score, 100) / 10 };
+  const conflict = isConflict(c, k, comps);
+  let effective = k.number === false && precision >= 3 ? 2 : precision;
+  if (conflict) effective = Math.min(effective, 1);
+  return { ...c, consistency: k, conflict, effectivePrecision: effective, rank: effective * 100 + hits * 12 - misses * 20 + Math.min(c.score, 100) / 10 };
 }
 
 export function metersBetween(a, b) {

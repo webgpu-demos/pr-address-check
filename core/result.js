@@ -9,10 +9,10 @@ const SEVERITY_STATUS = { review: 'Needs review', block: 'Not compliant', warn: 
 
 export const LOCATION_LABEL = {
   rooftop: 'Address point', interpolated: 'Street range', street: 'Street only', area: 'Area only',
-  ambiguous: 'Ambiguous', outside: 'Outside Puerto Rico', none: 'Not located',
+  ambiguous: 'Ambiguous', conflict: 'Conflicting match', outside: 'Outside Puerto Rico', none: 'Not located',
 };
 // Location reasons describe where the point landed. They set the location status, never compliance.
-const LOCATION_CODES = new Set(['NOT_LOCATED', 'OUTSIDE_PR', 'LOW_PRECISION', 'AMBIGUOUS_MATCH', 'BARRIO_DIFFERS', 'ZIP_ZCTA_DIFFERS']);
+const LOCATION_CODES = new Set(['NOT_LOCATED', 'OUTSIDE_PR', 'LOW_PRECISION', 'AMBIGUOUS_MATCH', 'LOCATION_CONFLICT', 'BARRIO_DIFFERS', 'ZIP_ZCTA_DIFFERS']);
 
 const FLAG_TEXT = {
   KM_PRESENT: ['warn', 'KM is extra detail; the standard expects a structure number.'],
@@ -116,14 +116,17 @@ export function buildResult(x) {
   const muniTyped = municipalityOf(comps);
   const located = Boolean(best) && place?.inPR;
   const precision = best ? best.precision : 'none';
-  const precisionOk = located && (best.effectivePrecision ?? 0) >= 3;
+  // usable: the point names a place we can record. trusted: precise enough to judge the typed address against.
+  const usable = located && !best.conflict && !x.ambiguous;
+  const precisionOk = usable && (best.effectivePrecision ?? 0) >= 3;
+  const trusted = precisionOk;
 
   // Required fields, as typed. Some can be filled from the point.
   const fillable = {
-    barrio: located && place.barrio ? place.barrio.name : '',
-    city: located && place.municipio ? place.municipio.name : '',
-    state: located || (x.inferredState ?? false) ? 'PR' : '',
-    zip: located && place.zcta ? place.zcta : '',
+    barrio: trusted && place.barrio ? place.barrio.name : '',
+    city: usable && place.municipio ? place.municipio.name : '',
+    state: usable || (x.inferredState ?? false) ? 'PR' : '',
+    zip: trusted && place.zcta ? place.zcta : '',
   };
   const missing = [];
   const filled = [];
@@ -160,7 +163,13 @@ export function buildResult(x) {
       reasons.push({ code: 'NOT_LOCATED', severity: 'review', maturity: 'core', source: 'map', text: 'No geocoder found this address.' });
     } else if (place?.checked && !place.inPR) {
       reasons.push({ code: 'OUTSIDE_PR', severity: 'review', maturity: 'core', source: 'map', text: 'The point falls outside Puerto Rico.' });
-    } else if (!precisionOk) {
+    } else if (best.conflict) {
+      const k = best.consistency ?? {};
+      const why = [k.zip === false ? `ZIP ${best.parts.zip}` : '', k.urbanization === false ? 'a different urbanización' : '',
+        best.parts.municipio ? `municipio ${best.parts.municipio}` : ''].filter(Boolean).join(', ');
+      reasons.push({ code: 'LOCATION_CONFLICT', severity: 'review', maturity: 'core', source: 'map',
+        text: `The closest match is a different place (${why}): ${best.matched}.` });
+    } else if (!precisionOk && !x.ambiguous) {
       reasons.push({ code: 'LOW_PRECISION', severity: 'warn', maturity: 'core', source: 'map',
         text: `Located only to ${LOCATION_LABEL[precision].toLowerCase()}${best.consistency?.number === false ? ' (house number did not match)' : ''}.` });
     }
@@ -168,7 +177,7 @@ export function buildResult(x) {
       reasons.push({ code: 'AMBIGUOUS_MATCH', severity: 'review', maturity: 'experimental', source: 'map',
         text: 'Two different places match equally well.' });
     }
-    if (located && place.municipio && muniTyped && !sameValue(muniTyped.name, place.municipio.name)) {
+    if (trusted && place.municipio && muniTyped && !sameValue(muniTyped.name, place.municipio.name)) {
       const postalRole = comps.some((c) => c.name === 'city' && c.role === 'postal_city' && findMunicipio(c.value)?.name === muniTyped.name);
       const zipFits = zipTyped && place.zcta && zipTyped === place.zcta;
       if (postalRole || zipFits) {
@@ -182,17 +191,17 @@ export function buildResult(x) {
       }
     }
     const placeName = comps.find((c) => c.name === 'city' && !findMunicipio(c.value));
-    if (located && place.municipio && !muniTyped && placeName && !reasons.some((r) => r.code === 'POSTAL_CITY_DIFFERS')) {
+    if (trusted && place.municipio && !muniTyped && placeName && !reasons.some((r) => r.code === 'POSTAL_CITY_DIFFERS')) {
       reasons.push({ code: 'POSTAL_CITY_DIFFERS', severity: 'warn', maturity: 'core', source: 'map',
         text: `"${placeName.value}" is a postal place name, not a municipality; the point is in ${place.municipio.name}.` });
     }
     const barrioTyped = componentValue(comps, 'barrio');
-    if (located && barrioTyped && place.barrio && !sameValue(barrioTyped, place.barrio.name)
+    if (trusted && barrioTyped && place.barrio && !sameValue(barrioTyped, place.barrio.name)
       && !fold(place.barrio.name).includes(fold(barrioTyped))) {
       reasons.push({ code: 'BARRIO_DIFFERS', severity: 'warn', maturity: 'experimental', source: 'map',
         text: `Typed barrio ${barrioTyped}; the point is in ${place.barrio.name}.` });
     }
-    if (located && zipTyped && place.zcta && zipTyped !== place.zcta) {
+    if (trusted && zipTyped && place.zcta && zipTyped !== place.zcta) {
       reasons.push({ code: 'ZIP_ZCTA_DIFFERS', severity: 'warn', maturity: 'experimental', source: 'map',
         text: `ZIP ${zipTyped} differs from the point's ZIP area (ZCTA ${place.zcta}).` });
     }
@@ -211,6 +220,7 @@ export function buildResult(x) {
   if (!best) location = 'none';
   else if (place?.checked && !place.inPR) location = 'outside';
   else if (x.ambiguous) location = 'ambiguous';
+  else if (best.conflict) location = 'conflict';
 
   // Field sources and the output record.
   const fields = {};
@@ -220,7 +230,7 @@ export function buildResult(x) {
     if (c) setField(name, c.value, c.source_text ? 'typed' : 'model', c.source_text, c.source);
   }
   const barrioC = comps.find((k) => k.name === 'barrio');
-  if (located && place.barrio) setField('barrio', place.barrio.name, 'map', barrioC?.source_text ?? '', 'tigerweb');
+  if (trusted && place.barrio) setField('barrio', place.barrio.name, 'map', barrioC?.source_text ?? '', 'tigerweb');
   else if (barrioC) setField('barrio', barrioC.value, 'typed', barrioC.source_text, barrioC.source);
   const cityC = comps.find((k) => k.name === 'city' && k.role !== 'municipality') ?? comps.find((k) => k.name === 'city');
   if (cityC) setField('city', cityC.value, cityC.source === 'form' ? 'form' : 'typed', cityC.source_text, cityC.source);
@@ -235,8 +245,11 @@ export function buildResult(x) {
   const v = (n) => fields[n]?.value ?? '';
   const streetLine = [v('structure_number'), v('street_type'), v('street_name')].filter(Boolean).join(' ')
     + (v('unit') ? ` ${v('unit')}` : '');
+  // Full address in the current app's order: number type name, city, barrio, PR zip. The municipality comes
+  // from a trusted point; otherwise the typed city stands.
+  const fullCity = trusted && place.municipio ? place.municipio.name : (muniTyped?.name ?? v('city'));
   const fullAddress = addressClass === 'postal_only' ? ''
-    : [streetLine, v('city'), v('barrio'), ['PR', v('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    : [streetLine, fullCity, v('barrio'), ['PR', v('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
   const record = {
     structure_number: v('structure_number'),
@@ -245,27 +258,29 @@ export function buildResult(x) {
     unit: v('unit'),
     urbanization: v('urbanization'),
     complex: v('complex'),
-    barrio: located && place.barrio ? place.barrio.name : '',
+    barrio: trusted && place.barrio ? place.barrio.name : '',
     barrio_typed: barrioC?.value ?? '',
-    barrio_type: located && place.barrio ? place.barrio.type : '',
+    barrio_type: trusted && place.barrio ? place.barrio.type : '',
     city: v('city'),
     city_role: cityC?.role ?? (fillable.city ? 'municipality' : ''),
     state: v('state'),
     zip: v('zip'),
-    municipality: located && place.municipio ? place.municipio.name : '',
-    municipio_fips: located && place.municipio ? place.municipio.fips : '',
-    municipality_type: located && place.municipio ? place.municipio.type : '',
-    zcta: located ? place.zcta ?? '' : '',
-    usng: located ? x.usng ?? '' : '',
-    lat: best ? round(best.lat, 6) : '',
-    lon: best ? round(best.lon, 6) : '',
+    municipality: usable && place.municipio ? place.municipio.name : '',
+    municipio_fips: usable && place.municipio ? place.municipio.fips : '',
+    municipality_type: usable && place.municipio ? place.municipio.type : '',
+    zcta: trusted ? place.zcta ?? '' : '',
+    usng: usable ? x.usng ?? '' : '',
+    lat: best && usable ? round(best.lat, 6) : '',
+    lon: best && usable ? round(best.lon, 6) : '',
+    candidate_lat: best && !usable ? round(best.lat, 6) : '',
+    candidate_lon: best && !usable ? round(best.lon, 6) : '',
     full_address: fullAddress,
     location_precision: LOCATION_LABEL[location],
     matched_address: best?.matched ?? '',
     geocoder: best ? `${best.provider}${best.addrType ? ` ${best.addrType}` : ''}` : '',
   };
 
-  const checks = buildChecks({ reasons, addressClass, located, precisionOk, best, place, muniTyped, zipTyped, comps, x });
+  const checks = buildChecks({ reasons, addressClass, located: trusted, precisionOk, best, place, muniTyped, zipTyped, comps, x });
 
   return {
     input: x.input,
@@ -316,7 +331,7 @@ function buildChecks({ reasons, addressClass, located, precisionOk, best, place,
     { id: 'required', label: 'Required fields typed', maturity: 'core', state: state(Boolean(r('MISSING_REQUIRED')), postal), detail: r('MISSING_REQUIRED')?.text ?? r('FILLED_FROM_MAP')?.text ?? '' },
     { id: 'physical', label: 'Physical address, not a mailbox', maturity: 'core', state: state(postal), detail: postal ? r('POSTAL_ONLY')?.text : '' },
     { id: 'zip', label: 'Puerto Rico ZIP', maturity: 'core', state: state(Boolean(r('ZIP_OUT_OF_RANGE')), !zipTyped), detail: r('ZIP_OUT_OF_RANGE')?.text ?? '' },
-    { id: 'located', label: 'Located to the address', maturity: 'core', state: state(!precisionOk, postal), detail: (r('NOT_LOCATED') ?? r('OUTSIDE_PR') ?? r('LOW_PRECISION'))?.text ?? (best ? `${LOCATION_LABEL[best.precision]} from ${best.provider === 'esri' ? 'Esri' : 'Census'}.` : '') },
+    { id: 'located', label: 'Located to the address', maturity: 'core', state: state(!precisionOk, postal), detail: (r('NOT_LOCATED') ?? r('OUTSIDE_PR') ?? r('LOCATION_CONFLICT') ?? r('AMBIGUOUS_MATCH') ?? r('LOW_PRECISION'))?.text ?? (best ? `${LOCATION_LABEL[best.precision]} from ${best.provider === 'esri' ? 'Esri' : 'Census'}.` : '') },
     { id: 'municipality', label: 'Municipality matches the point', maturity: 'core', state: state(Boolean(r('MUNICIPALITY_CONFLICT')), !located || !muniTyped), detail: (r('MUNICIPALITY_CONFLICT') ?? r('POSTAL_CITY_DIFFERS'))?.text ?? '' },
     { id: 'barrio', label: 'Barrio matches the point', maturity: 'experimental', state: state(Boolean(r('BARRIO_DIFFERS')), !located || !x.components.some((c) => c.name === 'barrio')), detail: r('BARRIO_DIFFERS')?.text ?? '' },
     { id: 'zcta', label: 'ZIP matches the ZIP area', maturity: 'experimental', state: state(Boolean(r('ZIP_ZCTA_DIFFERS')), !located || !zipTyped || !place?.zcta), detail: r('ZIP_ZCTA_DIFFERS')?.text ?? '' },

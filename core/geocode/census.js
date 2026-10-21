@@ -29,6 +29,7 @@ export async function censusGeocode(query, { transport }) {
         streetName: a.streetName ?? '',
         city: a.city ?? '',
         zip: a.zip ?? '',
+        urb: a.urb ?? '',
         from: a.fromAddress ?? '',
         to: a.toAddress ?? '',
       },
