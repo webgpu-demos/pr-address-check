@@ -127,11 +127,14 @@ export function buildResult(x) {
   // A coarse point is a street or area centroid; when the geocoder itself names another municipio, the point
   // is not evidence of where the address is, so its municipio is not recorded.
   const candMuni = findMunicipio(best?.parts?.municipio);
-  const coarseDisagrees = located && (best.effectivePrecision ?? 0) < 3 && candMuni && place.municipio && candMuni.name !== place.municipio.name;
+  // Census gives no municipio, only its postal city; fall back to that, then to the typed municipio.
+  const candMuniAny = candMuni ?? findMunicipio(best?.parts?.city);
+  const coarseDisagrees = located && (best.effectivePrecision ?? 0) < 3 && place.municipio
+    && ((candMuniAny && candMuniAny.name !== place.municipio.name) || (muniTyped && muniTyped.name !== place.municipio.name));
   const usable = located && !best.conflict && !x.ambiguous && !coarseDisagrees;
   if (coarseDisagrees) {
     reasons.push({ code: 'COARSE_POINT_ELSEWHERE', severity: 'info', maturity: 'experimental', source: 'map',
-      text: `The ${best.effectivePrecision === 2 ? 'street' : 'area'} match is placed in ${place.municipio.name}, but the geocoder says ${candMuni.name}; no municipio recorded from it.` });
+      text: `The ${best.effectivePrecision === 2 ? 'street' : 'area'} match is placed in ${place.municipio.name}, but ${candMuniAny && candMuniAny.name !== place.municipio.name ? `the geocoder says ${candMuniAny.name}` : `${muniTyped.name} was typed`}; no municipio recorded from it.` });
   }
   const precisionOk = usable && (best.effectivePrecision ?? 0) >= 3;
   const trusted = precisionOk;

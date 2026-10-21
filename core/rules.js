@@ -3,7 +3,7 @@
 // and the whole parse in rules-only mode. No model, no network.
 
 import { fold, squash } from './text.js';
-import { MUNICIPIOS, STREET_TYPES, POSTAL_ONLY, PR_ZIP, isPrZip, findPostalPlace } from './vocab.js';
+import { MUNICIPIOS, STREET_TYPES, POSTAL_ONLY, PR_ZIP, isPrZip, findPostalPlace, findMunicipio } from './vocab.js';
 
 const SPANISH_TYPES = new Set(['calle', 'cll', 'c/', 'avenida', 'ave', 'av', 'camino', 'cam', 'paseo', 'pso', 'callejon', 'cjon',
   'boulevard', 'blvd', 'bulevar', 'via', 'ramal', 'pasaje', 'sendero']);
@@ -119,7 +119,7 @@ export function parseRules(input, opts = {}) {
   }
 
   // 6. Units.
-  for (const m of text.matchAll(/\b(apt\.?|apto\.?|apartamento|apartment|suite|ste\.?|unit|unidad|oficina|ofic\.?|edif\.?|edificio|bldg\.?|building)\s*#?\s*([a-z]{0,2}-?\d[a-z0-9-]*|[a-z]{1,2}(?![\p{L}]))/giu)) {
+  for (const m of text.matchAll(/\b(apt\.?|apto\.?|apartamento|apartment|suite|ste\.?|unit|unidad|oficina|ofic\.?|edif\.?|edificio|bldg\.?|office)\s*#?\s*([a-z]{0,2}-?\d[a-z0-9-]*|[a-z]{1,2}(?![\p{L}]))/giu)) {
     if (!free(m.index, m.index + m[0].length)) continue;
     add('unit', `${m[1].replace(/\.$/, '')} ${m[2]}`, m.index, m.index + m[0].length);
   }
@@ -152,17 +152,23 @@ export function parseRules(input, opts = {}) {
   if (!components.some((c) => c.name === 'street_type')) {
     for (let i = 0; i < tokens.length; i++) {
       const t = tokens[i];
-      const typeFirst = SPANISH_TYPES.has(t.key) || (TYPE_FIRST_ENGLISH.has(t.key) && i > 0 && numberish(tokens[i - 1]));
+      // "37 c munoz rivera": a bare "c" right after the number is Calle.
+      const bareC = t.key === 'c' && i > 0 && numberish(tokens[i - 1]) && tokens[i + 1] && /^\p{L}{2,}/u.test(tokens[i + 1].raw);
+      const typeFirst = SPANISH_TYPES.has(t.key) || bareC || (TYPE_FIRST_ENGLISH.has(t.key) && i > 0 && numberish(tokens[i - 1]));
       if (used[t.start] || !typeFirst) continue;
+      // "205 antonio r barcelo ave cayey": an English-order type after a name, followed by a place. Leave it to step 8b.
+      const prevWord = i > 0 && /^\p{L}/u.test(tokens[i - 1].raw) && !used[tokens[i - 1].start] && !MARKER_WORDS.has(tokens[i - 1].key);
+      const placeNext = !tokens[i + 1] || tokens[i + 1].raw === ',' || municipioAt(tokens, i + 1, { allowAfterType: true }) || postalPlaceAt(tokens, i + 1);
+      if (ENGLISH_TYPES.has(t.key) && prevWord && placeNext) continue;
       const nameToks = [];
       let j = i + 1;
       if (j < tokens.length && /^\d+[a-z]?$/i.test(tokens[j].raw) && !used[tokens[j].start]) {
         nameToks.push(tokens[j]); j++; // "Calle 3"
       } else {
-        while (j < tokens.length && !isStop(tokens[j]) && !isMunicipioAt(tokens, j, true)) { nameToks.push(tokens[j]); j++; }
+        while (j < tokens.length && !isStop(tokens[j]) && !isMunicipioAt(tokens, j, true) && !(nameToks.length && postalPlaceAt(tokens, j))) { nameToks.push(tokens[j]); j++; }
       }
       if (!nameToks.length) continue;
-      add('street_type', TYPE_FIRST_ENGLISH.has(t.key) ? (t.key === 'avenue' ? 'Avenida' : 'Calle') : STREET_TYPES.get(t.key) ?? t.raw.replace(/\.$/, ''), t.start, t.end);
+      add('street_type', bareC ? 'Calle' : TYPE_FIRST_ENGLISH.has(t.key) ? (t.key === 'avenue' ? 'Avenida' : 'Calle') : STREET_TYPES.get(t.key) ?? t.raw.replace(/\.$/, ''), t.start, t.end);
       const s = nameToks[0].start; const e = nameToks[nameToks.length - 1].end;
       add('street_name', nameToks.map((w) => w.raw).join(' ').replace(/[.,]$/, ''), s, e);
       street = { typeIndex: i, nameEnd: j - 1 };
@@ -181,7 +187,7 @@ export function parseRules(input, opts = {}) {
         while (k >= 0 && !isStop(tokens[k]) && !/^\d/.test(tokens[k].raw)) { nameToks.unshift(tokens[k]); k--; }
         if (!nameToks.length) continue;
         add('street_name', nameToks.map((w) => w.raw).join(' '), nameToks[0].start, nameToks[nameToks.length - 1].end);
-        add('street_type', STREET_TYPES.get(t.key) ?? t.raw, t.start, t.end);
+        add('street_type', { st: 'Calle', street: 'Calle', ave: 'Avenida', avenue: 'Avenida' }[t.key] ?? STREET_TYPES.get(t.key) ?? t.raw, t.start, t.end);
         street = { typeIndex: k + 1, nameEnd: i };
         break;
       }
@@ -244,9 +250,14 @@ export function parseRules(input, opts = {}) {
 
   // 10. City: municipio names, skipping ones used as street names.
   const cities = [];
+  // In English order ("Munoz Rivera St Florida") the word after the type is the city, not the street.
+  const typeComp = components.find((c) => c.name === 'street_type');
+  const nameComp = components.find((c) => c.name === 'street_name');
+  const englishOrder = typeComp && nameComp && nameComp.span[1] <= typeComp.span[0];
   for (let i = 0; i < tokens.length; i++) {
     if (used[tokens[i].start]) continue;
-    const hit = municipioAt(tokens, i);
+    const afterEnglishType = englishOrder && tokens[i - 1]?.start === typeComp.span[0];
+    const hit = municipioAt(tokens, i, { allowAfterType: afterEnglishType });
     if (!hit) continue;
     if (i > 0 && NAME_CONNECTORS.has(tokens[i - 1].key)) continue; // "Jardines de Cayey" is a place name
     const s = tokens[i].start; const e = tokens[i + hit.len - 1].end;
@@ -260,6 +271,18 @@ export function parseRules(input, opts = {}) {
   if (cities.length > 1 && cities.some((c) => c.role === 'municipality')) {
     for (const c of cities) if (c.role !== 'municipality') c.role = 'postal_city';
   }
+  // A known postal place anywhere in what is left ("... ave santurce").
+  for (let i = 0; i < tokens.length; i++) {
+    if (used[tokens[i].start]) continue;
+    const len = postalPlaceAt(tokens, i);
+    if (!len) continue;
+    const s = tokens[i].start; const e = tokens[i + len - 1].end;
+    if (!free(s, e)) continue;
+    cities.push({ name: 'city', value: findPostalPlace(tokens.slice(i, i + len).map((t) => t.key).join(' ')).name, source_text: text.slice(s, e), span: [s, e], source: 'rules', role: 'postal_city' });
+    mark(s, e);
+    i += len - 1;
+  }
+  if (cities.length > 1) for (const c of cities) if (c.role === 'unknown' && findMunicipio(c.value)) c.role = 'unknown';
   // A place name right before the state or ZIP that is not a municipio: a postal city ("Río Piedras PR 00926").
   if (!cities.length) {
     const anchor = tokens.findIndex((t) => used[t.start] && components.some((c) => (c.name === 'state' || c.name === 'zip') && c.span[0] === t.start));
@@ -268,7 +291,7 @@ export function parseRules(input, opts = {}) {
       let k = anchor - 1;
       if (k >= 0 && tokens[k].raw === ',') k--; // "MERCEDITA, PR 00715"
       while (k >= 0 && tokens[k].raw !== ',' && !used[tokens[k].start] && /^\p{L}/u.test(tokens[k].raw) && !MARKER_WORDS.has(tokens[k].key) && words.length < 3) { words.unshift(tokens[k]); k--; }
-      if (words.length && (k < 0 || tokens[k].raw === ',')) {
+      if (words.length && (k < 0 || tokens[k].raw === ',' || findPostalPlace(words.map((w) => w.key).join(' ')))) {
         const s = words[0].start; const e = words[words.length - 1].end;
         const typed = words.map((w) => w.raw).join(' ').replace(/[.,]$/, '');
         cities.push({ name: 'city', value: findPostalPlace(typed)?.name ?? titleCase(typed), source_text: text.slice(s, e), span: [s, e], source: 'rules', role: 'postal_city' });
@@ -334,7 +357,17 @@ export function titleCase(s) {
   return s.toLowerCase().split(' ').map((w, i) => (i > 0 && SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 }
 
-function municipioAt(tokens, i) {
+/** A known postal place (1-3 words) starting at token i: "levittown", "rio piedras", "hato rey". */
+function postalPlaceAt(tokens, i) {
+  for (let len = 3; len >= 1; len--) {
+    const slice = tokens.slice(i, i + len);
+    if (slice.length < len || slice.some((t) => t.raw === ',')) continue;
+    if (findPostalPlace(slice.map((t) => t.key).join(' '))) return len;
+  }
+  return 0;
+}
+
+function municipioAt(tokens, i, { allowAfterType = false } = {}) {
   // Try 3-, 2- and 1-word names starting at token i.
   for (let len = 3; len >= 1; len--) {
     const slice = tokens.slice(i, i + len);
@@ -343,7 +376,7 @@ function municipioAt(tokens, i) {
     const muni = MUNICIPIOS.find((m) => m.key === name);
     if (muni) {
       const prev = tokens[i - 1];
-      if (prev && (SPANISH_TYPES.has(prev.key) || ENGLISH_TYPES.has(prev.key))) return null; // "Calle Juncos"
+      if (!allowAfterType && prev && (SPANISH_TYPES.has(prev.key) || ENGLISH_TYPES.has(prev.key))) return null; // "Calle Juncos"
       return { muni, len };
     }
   }
