@@ -21,7 +21,7 @@ const $ = (id) => document.getElementById(id);
 const settings = S.loadSettings();
 const esriKey = S.getEsriKey();
 
-await Promise.all(['calcite-shell', 'calcite-select', 'calcite-text-area', 'calcite-segmented-control', 'calcite-input-text',
+await Promise.all(['calcite-shell', 'calcite-select', 'calcite-option', 'calcite-text-area', 'calcite-segmented-control', 'calcite-segmented-control-item', 'calcite-input-text',
   'calcite-input-number', 'calcite-switch', 'calcite-checkbox', 'calcite-button', 'calcite-panel', 'calcite-action'].map((t) => customElements.whenDefined(t)));
 
 // ---------- helpers ----------

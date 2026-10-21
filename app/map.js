@@ -50,7 +50,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
       labelingInfo: [{
         labelExpressionInfo: { expression: '$feature.name' },
         symbol: { type: 'text', color: opts.labelColor, haloColor: [255, 255, 255, 0.9], haloSize: 1.2,
-          font: { family: 'IBM Plex Sans', size: opts.labelSize, weight: opts.labelWeight ?? 'normal' } },
+          font: { family: 'Noto Sans', size: opts.labelSize, weight: opts.labelWeight ?? 'normal' } },
         minScale: opts.labelMinScale,
       }],
       minScale: opts.minScale ?? 0,
@@ -139,7 +139,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
         symbol: { type: 'simple-marker', color: [20, 20, 20, 0.85], outline: { color: [255, 255, 255, 1], width: 1.5 } },
         labelingInfo: [{ deconflictionStrategy: 'none', labelPlacement: 'center-center',
           labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
-          symbol: { type: 'text', color: 'white', font: { family: 'IBM Plex Mono', size: 9, weight: 'bold' } } }],
+          symbol: { type: 'text', color: 'white', font: { family: 'Noto Sans', size: 9, weight: 'bold' } } }],
       },
       popupEnabled: false,
     });
