@@ -1,0 +1,31 @@
+id,input,tags,expected_structure_number,expected_street_name,expected_municipio,expected_lat,expected_lon,based_on
+m01,37 c munoz rivera adjuntas 00601,messy;abbrev;no_commas,37,Munoz Rivera,Adjuntas,,,f05
+m02,ave fernando ribas 41 utuado pr,messy;number_after;no_zip,41,Fernando Ribas,Utuado,,,f07
+m03,carr149 #25 ciales,messy;route;run_together,25,149,Ciales,,,f09
+m04,1400 ave roosevelt suite 12 guaynabo puerto rico 00968,messy;unit,1400,Roosevelt,Guaynabo,,,f16
+m05,calle 2 a-10 vega baja pr 00693,messy;block_lot;number_after,A-10,2,Vega Baja,,,f19
+m06,66 munoz rivera st florida pr,messy;english,66,Munoz Rivera,Florida,,,f20
+m07,"calle hospital 9 orocovis, frente al cuartel",messy;landmark;number_after,9,Hospital,Orocovis,,,f22
+m08,205 antonio r barcelo ave cayey,messy;english,205,Antonio R Barcelo,Cayey,,,f30
+m09,carretera 174 numero 170 minillas bayamon,messy;route;number_word,170,174,Bayamón,,,f33
+m10,hf-16 calle lizzie graham levittown toa baja 00949,messy;block_lot;postal_place,HF-16,Lizzie Graham,Toa Baja,18.437485,-66.172531,f41
+m11,200 road 137 morovis puerto rico,messy;route;english,200,137,Morovis,18.32500327,-66.4017482,f46
+m12,1130 ashford avenue condado san juan pr 00907,messy;english;postal_place,1130,Ashford,San Juan,18.45594185,-66.07192096,f47
+m13,100 roberto h. todd ave santurce,messy;english;postal_place,100,Roberto H Todd,San Juan,18.452278007032476,-66.07403596214672,f55
+m14,226 ave lauro piñero ceiba,messy,226,Lauro Piñero,Ceiba,18.26639,-65.64778,f56
+m15,22 calle luis munoz rivera yabucoa,messy;street_named_after_person,22,Luis Munoz Rivera,Yabucoa,18.05194,-65.87722,f57
+m16,Federico Degetau federal building 150 chardon ave office 225 hato rey 00918,messy;building_name;unit;postal_place,150,Chardon,San Juan,,,f59
+m17,26 pedro marquez st culebra pr 00775,messy;english,26,Pedro Marquez,Culebra,,,f11
+m18,carr 111 #100 angeles utuado 00611,messy;route;postal_place,100,111,Utuado,,,f14
+m19,300 road 101 boqueron cabo rojo,messy;route;postal_place,300,101,Cabo Rojo,,,f17
+m20,PR-200 km 0.5 vieques,messy;km,-,200,Vieques,,,f12
+m21,carretera 119 kilometro 27.4 las marias,messy;km,-,119,Las Marías,18.25847,-66.98595,f35
+m22,pr 685 km 1.9 tierras nuevas manati,messy;km;barrio_unlabeled,-,685,Manatí,18.4422,-66.5008,f44
+m23,upr utuado carr. 123 km. 52.2 salto arriba utuado,messy;km;label_first,-,123,Utuado,,,f29
+m24,8 santiago iglesias maunabo,messy;no_type,8,Santiago Iglesias,Maunabo,18.006922,-65.899667,f03
+m25,#25 calle munoz rivera barranquitas,messy;hash_number,25,Munoz Rivera,Barranquitas,,,f01
+m26,calle mateo fajardo 12 hormigueros pr 00660,messy;number_after,12,Mateo Fajardo,Hormigueros,18.139435,-67.127459,f52
+m27,23 calle principal palmer rio grande pr,messy;postal_place,23,Principal,Río Grande,,,f18
+m28,100 turpeaux industrial park mercedita ponce,messy;postal_place,100,,Ponce,,,f13
+m29,15 calle antonio barcelo suite 2 jayuya,messy;unit,15,Antonio Barcelo,Jayuya,,,f06
+m30,37 carr 778 ste 3 comerio pr,messy;route;unit,37,778,Comerío,,,f10

@@ -250,6 +250,7 @@ async function loadSample(path) {
 }
 $('sample-invented').addEventListener('click', () => loadSample('samples/invented-cases.csv'));
 $('sample-real').addEventListener('click', () => loadSample('samples/real-facilities-cases.csv'));
+$('sample-messy').addEventListener('click', () => loadSample('samples/real-messy-cases.csv'));
 fetch('samples/real-facilities-cases.csv', { method: 'HEAD' }).then((r) => { $('sample-real').hidden = !r.ok; }).catch(() => {});
 function loadCsv(text) {
   csv = parseCsvObjects(text);
