@@ -193,3 +193,6 @@ arcgis-map { min-width: 120px; }
 }
 
 .samples { align-items: center; gap: 2px; margin-top: 6px; }
+.rev button, .rev select { font: 12px var(--sans); padding: 3px 8px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; border-radius: 0; }
+.rev button:hover, .rev select:hover { border-color: var(--ink); }
+.rev button[data-act="remove"] { color: var(--alert); border-color: transparent; }

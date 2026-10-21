@@ -78,7 +78,8 @@ export async function validateAddress(rawInput, ctx) {
     preRun = await rawPromise;
   }
   if (fallback?.used) {
-    extraReasons.push({ code: 'MODEL_FALLBACK', severity: 'warn', maturity: 'core', source: 'gate',
+    // A failed model call says nothing about the address, so it never changes compliance.
+    extraReasons.push({ code: 'MODEL_FALLBACK', severity: 'info', maturity: 'core', source: 'gate',
       text: `Rules-only result: ${fallback.reason === 'MODEL_ERROR' ? 'the model call failed' : fallback.reason === 'NO_PROVIDER' ? 'no model is set up' : 'the model answer did not pass the gate'}.` });
   }
   if (gate?.dropped?.length && gate.ok) {
