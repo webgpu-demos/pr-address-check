@@ -3,7 +3,7 @@
 // numeric limits, no recursion, no unions. Accepted by Anthropic structured outputs,
 // OpenAI strict mode and Bedrock. Length and range checks happen in the gate instead.
 
-export const PROMPT_VERSION = 'p-2026-10-21d';
+export const PROMPT_VERSION = 'p-2026-10-21e';
 
 export const ADDRESS_CLASSES = ['physical_urban', 'physical_rural', 'descriptive', 'complex_only',
   'postal_only', 'mixed', 'not_an_address', 'ambiguous'];

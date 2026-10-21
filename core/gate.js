@@ -146,6 +146,13 @@ function valueFitsSource(c) {
   const v = canonical(c.value);
   const s = canonical(c.source_text);
   if (!v) return false;
+  // Numbers must be the whole typed number, not part of it: "A10" is not "10".
+  if (c.name === 'structure_number') {
+    const strip = (x) => canonical(x).replace(/^(no|num|numero|nº)\s+/, '').replace(/[\s#-]/g, '');
+    return strip(c.value) === strip(c.source_text);
+  }
+  if (c.name === 'zip') return String(c.value).replace(/\D/g, '').slice(0, 5) === String(c.source_text).replace(/\D/g, '').slice(0, 5);
+  if (c.name === 'km_hm') return normalizeKm(c.value) === normalizeKm(c.source_text);
   if (s.includes(v) || sameValue(c.value, c.source_text)) return true;
   if (c.name === 'street_type' || c.name === 'state') return true; // standard forms of short tokens
   if (c.name === 'city') return Boolean(findMunicipio(c.value)) && fold(c.source_text).includes(fold(c.value).split(' ')[0].slice(0, 3));

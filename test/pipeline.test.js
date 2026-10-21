@@ -311,3 +311,18 @@ test('a typed barrio must be one of the municipio barrios', async () => {
   assert.ok(!ok.reasons.some((x) => x.code === 'BARRIO_NOT_OFFICIAL'));
   assert.ok(!ok.missing_required.includes('barrio'));
 });
+
+test('the gate takes a ZIP+4 and a KM-HM reading, and refuses part of a number', () => {
+  const input = 'A10 CALLE 2, VEGA BAJA, PR 00693-9998 Km 4 Hm 2';
+  const base = { address_class: 'physical_urban', missing_required: [], flags: [], geocode_plan: [], user_prompts: [] };
+  const g = runGate(input, { ...base, components: [
+    { name: 'structure_number', value: '10', source_text: 'A10', inferred_from: '', role: '' },
+    { name: 'zip', value: '006939998', source_text: '00693-9998', inferred_from: '', role: '' },
+    { name: 'km_hm', value: '4.2', source_text: 'Km 4 Hm 2', inferred_from: '', role: '' },
+  ] }, parseRules(input));
+  assert.equal(g.components.find((c) => c.name === 'structure_number').value, 'A10'); // rebuilt from the typed text
+  assert.ok(g.dropped.some((d) => d.component.name === 'structure_number' && d.salvaged));
+  assert.equal(g.components.find((c) => c.name === 'zip').value, '00693');
+  assert.ok(!g.dropped.some((d) => d.component.name === 'zip'));
+  assert.equal(g.components.find((c) => c.name === 'km_hm').value, '4.2');
+});

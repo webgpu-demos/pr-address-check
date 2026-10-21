@@ -145,7 +145,7 @@ You never correct, complete or guess the address. You only label what is there.
 
 Hard rules
 1. source_text is copied character for character from the input (case and accents as typed). If a part is not in the input, leave it out; the only exception is state "PR" with source_text "" and inferred_from "model" when the address is clearly in Puerto Rico.
-2. value is the standard form of the same text: "Calle", "Avenida", "Carretera" for street types; title case for names; digits only for ZIP.
+2. value is the standard form of the same text: "Calle", "Avenida", "Carretera" for street types; title case for names; the 5-digit ZIP only (drop any +4); structure_number exactly as typed, letters included ("A10" stays "A10").
 3. Never invent a structure number, ZIP, barrio or street. Missing parts go in missing_required (only from its enum).
 4. A municipio name inside a street name ("Calle Lares") is the street, not the city. Flag STREET_NAMED_AFTER_MUNICIPALITY.
 5. city role: "municipality" when written as "X Municipio" or the address names two places and X is the municipio; "postal_city" for a place name that is not one of the 78 municipios (Río Piedras, Hato Rey, Mercedita, Levittown), or for a PO box city; otherwise "unknown". Keep the place as typed: Río Piedras stays Río Piedras, never San Juan. A place name in the city position (just before the state or ZIP) that is not a municipio is a postal_city, not a barrio.
