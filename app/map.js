@@ -36,7 +36,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
   map.add(result);
 
   function polygonLayer(key, features, opts) {
-    const graphics = features.map((f, i) => new Graphic({
+    const graphics = features.filter((f) => f.attributes.COUSUB !== '00000').map((f, i) => new Graphic({
       geometry: new Polygon({ rings: f.rings, spatialReference: { wkid: 4326 } }),
       attributes: { oid: i + 1, name: f.attributes.BASENAME ?? f.attributes.ZCTA5 ?? '', geoid: f.attributes.GEOID ?? '' },
     }));
@@ -86,10 +86,11 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
     result.removeAll();
     if (!r) return;
     const shapes = r.place?.shapes ?? {};
-    if (shapes.municipio) {
+    // Outline only what the record stands behind: the municipio for a usable point, the barrio for a trusted one.
+    if (shapes.municipio && r.record.municipality) {
       result.add(new Graphic({ geometry: ringsPolygon(shapes.municipio), symbol: { type: 'simple-fill', color: [0, 0, 0, 0], outline: { color: [20, 20, 20, 1], width: 2.2 } } }));
     }
-    if (shapes.barrio) {
+    if (shapes.barrio && r.record.barrio) {
       result.add(new Graphic({ geometry: ringsPolygon(shapes.barrio), symbol: { type: 'simple-fill', color: [29, 95, 191, 0.08], outline: { color: [29, 95, 191, 0.9], width: 1.4 } } }));
     }
     for (const c of r.candidates ?? []) {
@@ -100,24 +101,33 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
         attributes: { kind: 'candidate' },
       }));
     }
+    const targets = [];
     if (r.rival) {
-      result.add(new Graphic({
-        geometry: new Point({ longitude: r.rival.lon, latitude: r.rival.lat }),
-        symbol: { type: 'simple-marker', style: 'circle', size: 13, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2 } },
-      }));
+      const rp = new Point({ longitude: r.rival.lon, latitude: r.rival.lat });
+      result.add(new Graphic({ geometry: rp, symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2.2 } } }));
+      targets.push(rp);
     }
     if (r.best) {
       const pt = new Point({ longitude: r.best.lon, latitude: r.best.lat });
-      const doubtful = ['conflict', 'ambiguous', 'outside'].includes(r.location);
-      if (doubtful) {
+      targets.push(pt);
+      if (['conflict', 'ambiguous', 'outside'].includes(r.location)) {
         // Not a location we stand behind: an open vermilion ring, never the solid blue point.
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 14, color: [0, 0, 0, 0], outline: { color: [180, 54, 29, 1], width: 2.2 } } }));
+      } else if (['street', 'area'].includes(r.location)) {
+        // Coarse: an open blue ring, sized to say "somewhere around here".
+        const size = r.location === 'area' ? 40 : 24;
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size, color: [29, 95, 191, 0.08], outline: { color: [29, 95, 191, 0.9], width: 1.6, style: 'dash' } } }));
+        result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'cross', size: 9, color: [29, 95, 191, 1], outline: { color: [29, 95, 191, 1], width: 1.5 } } }));
       } else {
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 30, color: [29, 95, 191, 0.16], outline: { color: [29, 95, 191, 0.5], width: 1 } } }));
         result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 13, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2.5 } } }));
       }
+    }
+    if (targets.length > 1) {
+      goTo(targets, { duration: 600 }).then(() => { if (mapEl.zoom > 16) mapEl.zoom = 16; });
+    } else if (r.best) {
       const zoom = { rooftop: 17, interpolated: 16, street: 15, area: 13 }[r.best.precision] ?? 14;
-      goTo({ target: pt, zoom }, { duration: 600 });
+      goTo({ target: targets[0], zoom }, { duration: 600 });
     } else if (shapes.municipio) {
       goTo(ringsPolygon(shapes.municipio));
     }

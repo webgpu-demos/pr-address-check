@@ -5,6 +5,7 @@ import { sameValue, fold } from './text.js';
 import { municipalityOf } from './geocode/orchestrate.js';
 
 export const COMPLIANCE = ['Postal only', 'Needs review', 'Not compliant', 'Compliant with warnings', 'Compliant'];
+const PRECISION_ORDER = { rooftop: 4, interpolated: 3, street: 2, area: 1, none: 0 };
 const SEVERITY_STATUS = { review: 'Needs review', block: 'Not compliant', warn: 'Compliant with warnings' };
 
 export const LOCATION_LABEL = {
@@ -171,8 +172,10 @@ export function buildResult(x) {
       reasons.push({ code: 'LOCATION_CONFLICT', severity: 'review', maturity: 'core', source: 'map',
         text: `The closest match is a different place (${why}): ${best.matched}.` });
     } else if (!precisionOk && !x.ambiguous) {
+      const eff = best.effectivePrecision ?? 0;
+      const what = eff >= 2 ? 'the street, not the house' : 'an area (ZIP, barrio or town), not the address';
       reasons.push({ code: 'LOW_PRECISION', severity: 'warn', maturity: 'core', source: 'map',
-        text: `Located only to ${LOCATION_LABEL[precision].toLowerCase()}${best.consistency?.number === false ? ' (house number did not match)' : ''}.` });
+        text: `Located only to ${what}${best.consistency?.number === false ? '; the house number did not match' : ''}${best.consistency?.street === false ? '; the street did not match' : ''}.` });
     }
     if (x.conflictAlt && !reasons.some((r) => r.code === 'LOCATION_CONFLICT')) {
       const alt = x.conflictAlt;
@@ -222,7 +225,8 @@ export function buildResult(x) {
       if (reasons.some((r) => r.scope === 'compliance' && r.severity === s)) { compliance = SEVERITY_STATUS[s]; break; }
     }
   }
-  let location = precision;
+  const EFFECTIVE = { 4: 'rooftop', 3: 'interpolated', 2: 'street', 1: 'area', 0: 'none' };
+  let location = best ? (best.effectivePrecision < (PRECISION_ORDER[precision] ?? 0) ? EFFECTIVE[best.effectivePrecision] : precision) : 'none';
   if (!best) location = 'none';
   else if (place?.checked && !place.inPR) location = 'outside';
   else if (x.ambiguous) location = 'ambiguous';
