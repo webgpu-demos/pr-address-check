@@ -34,8 +34,8 @@
   --calcite-color-border-3: var(--rule-2);
   --calcite-color-border-input: #bdb9b1;
   --calcite-corner-radius: 2px;
-  --calcite-shell-panel-width: 440px;
-  --calcite-shell-panel-max-width: 720px;
+  --calcite-shell-panel-width: clamp(320px, 48vw, 460px);
+  --calcite-shell-panel-max-width: 760px;
 }
 
 html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
@@ -179,7 +179,12 @@ arcgis-map { --arcgis-layout-overlay-space-top: 8px; }
 .pick-banner { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 12px; font-size: 13px; z-index: 3; }
 .pick-banner button { margin-left: 10px; background: transparent; color: #fff; border: 1px solid #fff; padding: 2px 8px; cursor: pointer; }
 
-@media (max-width: 760px) {
-  :root { --calcite-shell-panel-width: 100vw; }
+#addr { --calcite-text-area-min-height: 72px; --calcite-text-area-max-height: 180px; }
+arcgis-map { min-width: 120px; }
+@media (max-width: 900px) {
+  .nav-end .nav-bounds { display: none; }
+}
+@media (max-width: 640px) {
+  :root { --calcite-shell-panel-width: 64vw; }
   .nav-end { display: none; }
 }

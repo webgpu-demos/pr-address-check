@@ -27,8 +27,9 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
 
   const map = new Map({ basemap: basemapFor('light') });
   mapEl.map = map;
-  mapEl.constraints = { minZoom: 7 };
-  await mapEl.viewOnReady();
+  // The view becomes ready only once it has a size, so nothing here waits on it; view calls are deferred instead.
+  const whenReady = () => mapEl.viewOnReady().then(() => { mapEl.constraints = { minZoom: 7 }; });
+  const goTo = (target, opts) => whenReady().then(() => mapEl.goTo(target, opts)).catch(() => {});
 
   const layers = { municipio: null, barrio: null, zcta: null, batch: null };
   const result = new GraphicsLayer({ title: 'Result', listMode: 'hide' });
@@ -109,14 +110,14 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
       result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 22, color: [29, 95, 191, 0.14], outline: { color: [29, 95, 191, 0], width: 0 } } }));
       result.add(new Graphic({ geometry: pt, symbol: { type: 'simple-marker', style: 'circle', size: 11, color: [29, 95, 191, 1], outline: { color: [255, 255, 255, 1], width: 2 } } }));
       const zoom = { rooftop: 17, interpolated: 16, street: 15, area: 13 }[r.best.precision] ?? 14;
-      mapEl.goTo({ target: pt, zoom }, { duration: 600 }).catch(() => {});
+      goTo({ target: pt, zoom }, { duration: 600 });
     } else if (shapes.municipio) {
-      mapEl.goTo(ringsPolygon(shapes.municipio)).catch(() => {});
+      goTo(ringsPolygon(shapes.municipio));
     }
   }
 
   function zoomToCandidate(c) {
-    mapEl.goTo({ target: new Point({ longitude: c.lon, latitude: c.lat }), zoom: 17 }, { duration: 400 }).catch(() => {});
+    goTo({ target: new Point({ longitude: c.lon, latitude: c.lat }), zoom: 17 }, { duration: 400 });
   }
 
   function showBatch(rows) {
@@ -145,7 +146,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
     });
     map.add(layer);
     layers.batch = layer;
-    layer.when(() => layer.queryExtent().then((r) => r.extent && mapEl.goTo(r.extent.expand(1.3)).catch(() => {}))).catch(() => {});
+    layer.when(() => layer.queryExtent().then((r) => r.extent && goTo(r.extent.expand(1.3)))).catch(() => {});
   }
 
   let picking = false;
@@ -160,7 +161,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
       const hit = await mapEl.hitTest(e.detail, { include: [layers.batch] });
       const g = hit.results.find((h) => h.graphic?.attributes?.idx !== undefined)?.graphic;
       if (g && !g.isAggregate) onBatchSelect?.(g.attributes.idx);
-      else if (g?.isAggregate) mapEl.goTo({ target: g.geometry, zoom: mapEl.zoom + 2 }).catch(() => {});
+      else if (g?.isAggregate) goTo({ target: g.geometry, zoom: mapEl.zoom + 2 });
     }
   });
 
