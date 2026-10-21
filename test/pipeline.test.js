@@ -203,3 +203,12 @@ test('form municipality is checked against the point; a map pick replaces geocod
   assert.equal(picked.geocode_stage, 'manual');
   assert.ok(!picked.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT'));
 });
+
+test('enum casing from the model is normalized before the gate', () => {
+  const cased = structuredClone(MODEL_ANSWER);
+  cased.address_class = 'Physical_urban';
+  cased.components[0].name = 'Structure_number';
+  const g = runGate(INPUT, cased, parseRules(INPUT));
+  assert.ok(g.ok);
+  assert.equal(g.address_class, 'physical_urban');
+});

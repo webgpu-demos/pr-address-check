@@ -68,3 +68,17 @@ export function validate(schema, value, path = '$') {
   }
   return errors;
 }
+
+/** Models may change the capitalization of enum values. Map case variants back to the schema's spelling. */
+export function normalizeEnums(schema, value) {
+  if (schema.type === 'object' && value && typeof value === 'object' && !Array.isArray(value)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = schema.properties?.[k] ? normalizeEnums(schema.properties[k], v) : v;
+    return out;
+  }
+  if (schema.type === 'array' && Array.isArray(value)) return value.map((v) => normalizeEnums(schema.items, v));
+  if (schema.type === 'string' && schema.enum && typeof value === 'string' && !schema.enum.includes(value)) {
+    return schema.enum.find((e) => e.toLowerCase() === value.toLowerCase()) ?? value;
+  }
+  return value;
+}

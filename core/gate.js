@@ -1,7 +1,7 @@
 // Verification gate: nothing the model says reaches the record until it passes here.
 // Checks: schema, source text really in the input, vocabulary, and consistency with the rule parser.
 
-import { INTERPRETATION_SCHEMA, validate } from './schema.js';
+import { INTERPRETATION_SCHEMA, validate, normalizeEnums } from './schema.js';
 import { locateSourceText, sameValue, squash, canonical } from './text.js';
 import { findMunicipio, STREET_TYPES, isPrZip } from './vocab.js';
 import { fold } from './text.js';
@@ -9,7 +9,8 @@ import { fold } from './text.js';
 const KEY_FIELDS = ['structure_number', 'street_name', 'zip', 'city', 'urbanization', 'barrio'];
 const MAX_VALUE = 120;
 
-export function runGate(input, modelData, rulesParse) {
+export function runGate(input, rawModelData, rulesParse) {
+  const modelData = normalizeEnums(INTERPRETATION_SCHEMA, rawModelData);
   const errors = validate(INTERPRETATION_SCHEMA, modelData);
   if (errors.length) {
     return { ok: false, reason: 'SCHEMA', errors, components: [], flags: [], dropped: [], disagreements: [] };

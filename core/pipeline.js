@@ -7,7 +7,7 @@
 import { parseRules } from './rules.js';
 import { runGate } from './gate.js';
 import { squash } from './text.js';
-import { INTERPRETATION_SCHEMA, REVIEW_SCHEMA, PROMPT_VERSION, validate } from './schema.js';
+import { INTERPRETATION_SCHEMA, REVIEW_SCHEMA, PROMPT_VERSION, validate, normalizeEnums } from './schema.js';
 import { systemPrompt, userMessage, reviewSystemPrompt, reviewMessage } from './prompt.js';
 import { runQueries, geocodeStaged } from './geocode/orchestrate.js';
 import { buildResult, tieBreak } from './result.js';
@@ -122,8 +122,9 @@ export async function validateAddress(rawInput, ctx) {
       });
       usage = priorReview ? null : res.usage;
       modelName = res.model || modelName;
-      const errs = validate(REVIEW_SCHEMA, res.data);
-      review = errs.length ? { notes: [], summary: '', errors: errs } : res.data;
+      const data = normalizeEnums(REVIEW_SCHEMA, res.data);
+      const errs = validate(REVIEW_SCHEMA, data);
+      review = errs.length ? { notes: [], summary: '', errors: errs } : data;
       for (const n of review.notes ?? []) {
         extraReasons.push({ code: `AI_${n.code}`, severity: 'info', maturity: 'experimental', source: 'model', text: n.note });
       }
