@@ -320,13 +320,15 @@ $('batch-run').addEventListener('click', async () => {
 $('batch-stop').addEventListener('click', () => batchCtrl?.abort());
 
 function paintBatch() {
-  const counts = Object.fromEntries(FILTERS.map((f) => [f, 0]));
+  // Counts are of inputs: an input is in a status when any mode gave it that status.
+  const counts = Object.fromEntries(FILTERS.map((f) => [f, new Set()]));
   for (const e of entries) {
-    counts.All++;
-    if (e.error) { counts.Errors++; continue; }
-    if (counts[e.result.compliance] !== undefined) counts[e.result.compliance]++;
-    if (e.result.location === 'none') counts['Not located']++;
+    counts.All.add(e.i);
+    if (e.error) { counts.Errors.add(e.i); continue; }
+    counts[e.result.compliance]?.add(e.i);
+    if (e.result.location === 'none') counts['Not located'].add(e.i);
   }
+  for (const f of FILTERS) counts[f] = counts[f].size;
   counts['Modes differ'] = countDiffering(entries);
   $('batch-filter').innerHTML = FILTERS.filter((f) => f === 'All' || counts[f]).map((f) => `<button type="button" role="tab" aria-selected="${f === filter}" data-f="${esc(f)}">${esc(f === 'Compliant with warnings' ? 'Warnings' : f)}<span class="n">${counts[f]}</span></button>`).join('');
   $('batch-list').innerHTML = renderBatchList(entries, filter);
