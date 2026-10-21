@@ -72,7 +72,8 @@ function evidenceFor(name, best, place) {
     if (name === 'structure_number') ev.push(best.parts.number, best.matched);
     if (name === 'street_name') ev.push(best.parts.streetName, best.parts.street, best.matched);
     if (name === 'zip') ev.push(best.parts.zip);
-    if (name === 'urbanization' || name === 'barrio') ev.push(best.parts.neighborhood);
+    if (name === 'urbanization') ev.push(String(best.parts.neighborhood ?? '').replace(/^urb\.?\s+/i, ''), best.parts.urb);
+    if (name === 'barrio') ev.push(String(best.parts.district ?? '').replace(/^barrio\s+/i, ''));
     if (name === 'city') ev.push(best.parts.municipio);
   }
   if (place) {
@@ -172,6 +173,11 @@ export function buildResult(x) {
     } else if (!precisionOk && !x.ambiguous) {
       reasons.push({ code: 'LOW_PRECISION', severity: 'warn', maturity: 'core', source: 'map',
         text: `Located only to ${LOCATION_LABEL[precision].toLowerCase()}${best.consistency?.number === false ? ' (house number did not match)' : ''}.` });
+    }
+    if (x.conflictAlt && !reasons.some((r) => r.code === 'LOCATION_CONFLICT')) {
+      const alt = x.conflictAlt;
+      reasons.push({ code: 'LOCATION_CONFLICT', severity: 'review', maturity: 'core', source: 'map',
+        text: `A precise match exists somewhere else: ${alt.matched}. Check the typed municipio and ZIP.` });
     }
     if (x.ambiguous) {
       reasons.push({ code: 'AMBIGUOUS_MATCH', severity: 'review', maturity: 'experimental', source: 'map',
@@ -300,7 +306,7 @@ export function buildResult(x) {
     record,
     components: comps,
     best,
-    rival: x.rival ?? null,
+    rival: x.rival ?? x.conflictAlt ?? null,
     candidates: x.candidates ?? [],
     queries: x.queries ?? [],
     geocode_errors: x.geocodeErrors ?? [],

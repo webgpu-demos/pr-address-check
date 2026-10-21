@@ -37,7 +37,8 @@ export function parseRules(input, opts = {}) {
   const mark = (s, e) => { for (let i = s; i < e; i++) used[i] = true; };
   const free = (s, e) => { for (let i = s; i < e; i++) if (used[i]) return false; return true; };
   const add = (name, value, s, e, extra = {}) => {
-    components.push({ name, value: squash(value), source_text: text.slice(s, e), span: [s, e], source: 'rules', role: '', ...extra });
+    const v = NAME_PARTS.has(name) ? titleCase(squash(value)) : squash(value);
+    components.push({ name, value: v, source_text: text.slice(s, e), span: [s, e], source: 'rules', role: '', ...extra });
     mark(s, e);
   };
   const flag = (code, note) => { if (!flags.some((f) => f.code === code)) flags.push({ code, note, source: 'rules' }); };
@@ -219,7 +220,7 @@ export function parseRules(input, opts = {}) {
   if (numTok) {
     const raw = numTok.raw.replace(/^#/, '').replace(/,$/, '');
     const s = numTok.start + (numTok.raw.startsWith('#') ? 1 : 0);
-    add('structure_number', raw, s, s + raw.length);
+    add('structure_number', raw.toUpperCase(), s, s + raw.length);
     if (after && street) flag('NONSTANDARD_ORDER', 'The number follows the street name; the standard puts it first.');
     if (/-/.test(raw) || /^[a-z]/i.test(raw)) {
       flag('AMBIGUOUS_NUMBER', `"${raw}" could be block and lot, or building and unit.`);
@@ -301,6 +302,15 @@ export function parseRules(input, opts = {}) {
   }
 
   return { address_class: addressClass, components, flags, source: 'rules' };
+}
+
+const NAME_PARTS = new Set(['street_name', 'urbanization', 'complex', 'sector', 'barrio', 'label_text']);
+const SMALL = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e']);
+/** Title-case names typed all in one case ("villa carolina", "CALLE LUNA"); mixed case is left as typed. */
+export function titleCase(s) {
+  const letters = s.replace(/[^\p{L}]/gu, '');
+  if (!letters || (letters !== letters.toLowerCase() && letters !== letters.toUpperCase())) return s;
+  return s.toLowerCase().split(' ').map((w, i) => (i > 0 && SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 }
 
 function municipioAt(tokens, i) {

@@ -30,7 +30,7 @@ export function composeQuery(comps, { style = 'census' } = {}) {
   const city = muni?.name ?? value(comps, 'city');
   const zip = value(comps, 'zip');
   let street = '';
-  if (route) street = style === 'esri' ? `PR-${route}${km ? ` Km ${km}` : ''}` : `Carr ${route}${km ? ` Km ${km}` : ''}`;
+  if (route) street = `Carr ${route}${km ? ` Km ${km}` : ''}`;
   else if (name) street = [type, name].filter(Boolean).join(' ');
   const line1 = [num, street].filter(Boolean).join(' ');
   const parts = [line1, urb ? (style === 'census' ? `Urb ${urb}` : urb) : '', complex, city,
@@ -105,29 +105,49 @@ export async function runQueries(queries, geocoders) {
 /** How well a candidate agrees with what was typed: hits and misses on number, street, ZIP and municipio. */
 export function consistency(c, comps) {
   const num = value(comps, 'structure_number');
-  const name = value(comps, 'route_number') || value(comps, 'street_name');
+  const route = value(comps, 'route_number');
+  const name = route || value(comps, 'street_name');
   const zip = value(comps, 'zip');
   const urb = value(comps, 'urbanization');
   const muni = municipalityOf(comps);
   const out = { number: null, street: null, zip: null, municipio: null, urbanization: null };
   const matched = canonical(c.matched);
-  if (num) {
+  const km = value(comps, 'km_hm');
+  if (c.addrType === 'DistanceMarker') {
+    // A KM marker match: its "house number" is the kilometer.
+    out.number = km ? Number(c.parts.number) === Number(km) : null;
+  } else if (num) {
     const n = canonical(num).replace(/\s|-/g, '');
     const cn = canonical(c.parts.number || '').replace(/\s|-/g, '');
     out.number = cn ? cn === n : (c.precision === 'rooftop' || c.precision === 'interpolated') ? matched.replace(/-/g, '').startsWith(n) : null;
   }
   if (name) {
-    const cs = canonical(c.parts.streetName || c.parts.street || '');
-    const nm = canonical(name);
-    out.street = cs ? (cs.includes(nm) || nm.includes(cs)) : matched.includes(nm);
+    // Token-level, so "Calle 2" does not match "Calle 12" and route 2 does not match "Calle 7".
+    const candStreet = canonical(c.parts.street || c.parts.streetName || '');
+    const cTokens = new Set((candStreet || matched).split(' '));
+    if (route) {
+      const isRoute = /\b(pr|carr|carretera|ruta|road|rd|expreso|autopista)\b/.test(candStreet || matched) || !candStreet;
+      out.street = isRoute && cTokens.has(canonical(route));
+      if (!candStreet && !out.street) out.street = null;
+    } else {
+      const nTokens = canonical(name).split(' ').filter(Boolean);
+      const sTokens = candStreet ? candStreet.split(' ').filter((t) => !['calle', 'avenida', 'pr', 'camino', 'paseo', 'boulevard', 'callejon'].includes(t)) : [];
+      if (candStreet) {
+        const a = nTokens.every((t) => cTokens.has(t));
+        const b = sTokens.length > 0 && sTokens.every((t) => nTokens.includes(t));
+        out.street = a || b;
+      } else {
+        out.street = nTokens.every((t) => cTokens.has(t)) ? true : null;
+      }
+    }
   }
   if (zip && c.parts.zip) out.zip = c.parts.zip.slice(0, 5) === zip;
   if (muni && (c.parts.municipio || c.parts.city)) {
-    out.municipio = sameValue(c.parts.municipio || '', muni.name) || sameValue(c.parts.city || '', muni.name)
+    out.municipio = findMunicipio(c.parts.municipio)?.name === muni.name || sameValue(c.parts.city || '', muni.name)
       || fold(c.matched).includes(fold(muni.name)) ? true : null; // a different postal city is not proof of a miss
   }
   // Urbanización: the candidate names one (Esri "Urb X" in the match, Census urb) and it is not the typed one.
-  const candUrb = c.parts.urb || (/\burb\.?\s+([^,]+)/i.exec(c.matched)?.[1] ?? '');
+  const candUrb = c.parts.urb || String(c.parts.neighborhood ?? '').replace(/^urb\.?\s+/i, '') || (/\burb\.?\s+([^,]+)/i.exec(c.matched)?.[1] ?? '');
   if (urb && candUrb) {
     const a = canonical(urb); const b = canonical(candUrb);
     out.urbanization = a.includes(b) || b.includes(a);
@@ -138,7 +158,8 @@ export function consistency(c, comps) {
 /** The candidate names a different place: two independent misses, or a wrong ZIP in another municipio. */
 export function isConflict(c, k, comps) {
   const muni = municipalityOf(comps);
-  const otherMuni = Boolean(muni && c.parts.municipio && findMunicipio(c.parts.municipio) && !sameValue(c.parts.municipio, muni.name));
+  const candMuni = findMunicipio(c.parts.municipio);
+  const otherMuni = Boolean(muni && candMuni && candMuni.name !== muni.name);
   const misses = [k.zip, k.urbanization].filter((v) => v === false).length;
   return misses >= 2 || (k.zip === false && otherMuni) || (k.urbanization === false && otherMuni);
 }
@@ -151,6 +172,8 @@ export function rankCandidate(c, comps) {
   const precision = PRECISION_RANK[c.precision] ?? 0;
   const conflict = isConflict(c, k, comps);
   let effective = k.number === false && precision >= 3 ? 2 : precision;
+  // A different street is not this address: only its area can be trusted.
+  if (k.street === false && precision >= 2) effective = Math.min(effective, 1);
   if (conflict) effective = Math.min(effective, 1);
   return { ...c, consistency: k, conflict, effectivePrecision: effective, rank: effective * 100 + hits * 12 - misses * 20 + Math.min(c.score, 100) / 10 };
 }
@@ -172,5 +195,10 @@ export function pickBest(candidates, comps) {
   const rival = ranked.find((c) => c !== best && metersBetween(c, best) > 500);
   const ambiguous = Boolean(rival && best.effectivePrecision >= 3 && rival.effectivePrecision === best.effectivePrecision
     && best.rank - rival.rank < 12);
-  return { best, ambiguous, rival: ambiguous ? rival : null, ranked: ranked.slice(0, 8) };
+  // When the best we can stand behind is coarse but a precise match exists elsewhere, surface it:
+  // it usually means the typed municipio or ZIP is wrong.
+  const strongConflict = best.effectivePrecision < 3
+    ? ranked.find((c) => c.conflict && (PRECISION_RANK[c.precision] ?? 0) >= 3 && c.consistency.street === true && c.consistency.number !== false)
+    : null;
+  return { best, ambiguous, rival: ambiguous ? rival : null, conflictAlt: strongConflict ?? null, ranked: ranked.slice(0, 8) };
 }

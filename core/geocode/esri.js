@@ -16,7 +16,7 @@ export function esriUrl(query, { token, maxLocations = 5 } = {}) {
   return `${ESRI_URL}?${qs({
     SingleLine: query,
     f: 'json',
-    outFields: 'Addr_type,Match_addr,AddNum,StName,StType,StPreType,Nbrhd,District,City,Subregion,Region,RegionAbbr,Postal,Score',
+    outFields: 'Addr_type,Match_addr,AddNum,StName,StType,StPreType,Nbrhd,District,Sector,City,Subregion,Region,RegionAbbr,Postal,Score',
     maxLocations,
     countryCode: 'PRI',
     searchExtent: JSON.stringify({ ...PR_EXTENT, spatialReference: { wkid: 4326 } }),
@@ -45,7 +45,9 @@ export async function esriGeocode(query, { transport, token }) {
         number: a.AddNum ?? '',
         street: [a.StPreType, a.StName, a.StType].filter(Boolean).join(' '),
         streetName: a.StName ?? '',
-        neighborhood: a.Nbrhd ?? a.District ?? '',
+        neighborhood: a.Nbrhd ?? '', // PR: the urbanización, "Urb X"
+        district: a.District ?? '', // PR: the barrio, "Barrio X"
+        sector: a.Sector ?? '',
         city: a.City ?? '',
         municipio: a.Subregion ?? '',
         zip: a.Postal ?? '',

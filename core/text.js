@@ -24,18 +24,22 @@ const CANON = new Map([
   ['ste', 'suite'], ['suite', 'suite'],
   ['cond', 'cond'], ['condominio', 'cond'], ['condominium', 'cond'],
   ['res', 'res'], ['residencial', 'res'],
-  ['km', 'km'], ['kilometro', 'km'], ['k', 'km'],
-  ['calle', 'calle'], ['cll', 'calle'], ['c', 'calle'], ['street', 'calle'], ['st', 'calle'],
+  ['km', 'km'], ['kilometro', 'km'],
+  // Single letters stay letters: "Calle C" and "Calle K" are common street names.
+  ['calle', 'calle'], ['cll', 'calle'], ['street', 'calle'], ['st', 'calle'],
   ['sect', 'sector'], ['sec', 'sector'], ['sector', 'sector'],
   ['ext', 'ext'], ['extension', 'ext'],
   ['parc', 'parcelas'], ['parcelas', 'parcelas'],
   ['blvd', 'boulevard'], ['bulevar', 'boulevard'], ['boulevard', 'boulevard'],
   ['cjon', 'callejon'], ['callejon', 'callejon'],
+  ['byp', 'bypass'], ['bypass', 'bypass'],
+  ['expwy', 'expreso'], ['expressway', 'expreso'], ['expreso', 'expreso'],
 ]);
 
 /** Canonical form for comparing address text: folded, punctuation-free, abbreviations unified. */
 export function canonical(s) {
   const words = fold(s)
+    .replace(/\bc\//g, 'calle ')
     .replace(/#/g, ' ')
     .replace(/[^a-z0-9.\- ]+/g, ' ')
     .replace(/(\d)\.(\d)/g, '$1§$2') // keep decimal points inside numbers (Km 9.4)
@@ -43,10 +47,19 @@ export function canonical(s) {
     .replace(/§/g, '.')
     .replace(/-(?=[a-z])/g, ' ')
     .replace(/\b([a-z]{2,})-(?=\d)/g, '$1 ') // "PR-165" -> "pr 165", keep block-lot "B-14"
+    .replace(/\bby\s+pass\b/g, 'bypass')
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => CANON.get(w) ?? w);
-  return words.join(' ');
+  // Initials written apart or together compare equal: "F. D. Roosevelt" = "FD Roosevelt".
+  const joined = [];
+  let initials = false;
+  for (const w of words) {
+    const single = /^[a-z]$/.test(w);
+    if (single && initials && joined.length) joined[joined.length - 1] += w;
+    else { joined.push(w); initials = single; }
+  }
+  return joined.join(' ');
 }
 
 /**

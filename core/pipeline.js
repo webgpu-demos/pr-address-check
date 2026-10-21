@@ -102,7 +102,7 @@ export async function validateAddress(rawInput, ctx) {
     : addressClass === 'postal_only'
     ? { queries: preQueries, candidates: [], errors: [], best: null, ambiguous: false, rival: null, ranked: [], stage: '', censusHit: false }
     : await geocodeStaged(input, comps, modelPlan, geocoders, { queries: preQueries, ...preRun });
-  const { best, ambiguous, rival, ranked } = geo;
+  const { best, ambiguous, rival, ranked, conflictAlt = null } = geo;
 
   const place = best && gis ? await gis.lookup(best.lon, best.lat) : null;
 
@@ -154,6 +154,7 @@ export async function validateAddress(rawInput, ctx) {
     best,
     ambiguous,
     rival,
+    conflictAlt,
     candidates: ranked,
     queries: geo.queries,
     geocodeErrors: geo.errors,
