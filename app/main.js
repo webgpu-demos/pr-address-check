@@ -239,14 +239,27 @@ $('csv-file').addEventListener('change', async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
   if (file.size > 20 * 1024 * 1024) { alertMsg('File too large', 'Keep batch files under 20 MB.'); return; }
-  csv = parseCsvObjects(await file.text());
+  loadCsv(await file.text());
+});
+async function loadSample(path) {
+  try {
+    const res = await fetch(path, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    loadCsv(await res.text());
+  } catch (err) { alertMsg('Could not load the sample', String(err.message ?? err)); }
+}
+$('sample-invented').addEventListener('click', () => loadSample('samples/invented-cases.csv'));
+$('sample-real').addEventListener('click', () => loadSample('samples/real-facilities-cases.csv'));
+fetch('samples/real-facilities-cases.csv', { method: 'HEAD' }).then((r) => { $('sample-real').hidden = !r.ok; }).catch(() => {});
+function loadCsv(text) {
+  csv = parseCsvObjects(text);
   if (!csv.rows.length) { alertMsg('Empty file', 'No rows found in that CSV.'); return; }
   const guess = guessAddressColumn(csv.header, csv.rows);
   $('csv-col').innerHTML = csv.header.map((h) => `<calcite-option value="${esc(h)}" ${h === guess ? 'selected' : ''}>${esc(h)}</calcite-option>`).join('');
   $('csv-limit').value = String(Math.min(csv.rows.length, 200));
   $('csv-map').hidden = false;
   $('csv-info').textContent = `${csv.rows.length} rows · ${hasLabels(csv.header) ? 'labeled: each run will be scored' : 'no expected_* columns: results only'}`;
-});
+}
 
 $('batch-run').addEventListener('click', async () => {
   if (!csv) return;

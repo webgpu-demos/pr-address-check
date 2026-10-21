@@ -71,6 +71,11 @@
         <div class="pad">
           <p class="hint">Upload a CSV with an address column. If it has <code>expected_*</code> columns (from <code>tools/make-cases.mjs</code>), each run is scored.</p>
           <input type="file" id="csv-file" accept=".csv,text/csv" class="file" />
+          <div class="row wrap samples">
+            <span class="small">Or load a sample:</span>
+            <calcite-button id="sample-invented" appearance="transparent" kind="neutral" scale="s" icon-start="file-csv">Invented cases</calcite-button>
+            <calcite-button id="sample-real" appearance="transparent" kind="neutral" scale="s" icon-start="file-csv" hidden>Real public facilities</calcite-button>
+          </div>
           <div id="csv-map" class="csv-map" hidden>
             <div class="row">
               <div class="grow">

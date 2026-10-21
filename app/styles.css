@@ -191,3 +191,5 @@ arcgis-map { min-width: 120px; }
   :root { --calcite-shell-panel-width: 64vw; }
   .nav-end { display: none; }
 }
+
+.samples { align-items: center; gap: 2px; margin-top: 6px; }
