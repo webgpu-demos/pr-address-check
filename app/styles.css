@@ -176,10 +176,10 @@ pre.json { max-height: 280px; overflow: auto; background: var(--card); border: 1
 
 /* Map overlays */
 arcgis-map { --arcgis-layout-overlay-space-top: 8px; }
-.map-legend { position: absolute; left: 12px; bottom: 28px; background: rgba(255,255,255,.95); border: 1px solid var(--rule); padding: 6px 8px; font-size: 11px; z-index: 2; }
+.map-legend { background: rgba(255,255,255,.95); border: 1px solid var(--rule); padding: 6px 8px; font-size: 11px; }
 .map-legend div { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
 .map-legend i { display: inline-block; width: 10px; height: 10px; }
-.pick-banner { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 12px; font-size: 13px; z-index: 3; }
+.pick-banner { background: var(--ink); color: #fff; padding: 8px 12px; font-size: 13px; }
 .pick-banner button { margin-left: 10px; background: transparent; color: #fff; border: 1px solid #fff; padding: 2px 8px; cursor: pointer; }
 
 #addr { --calcite-text-area-min-height: 64px; --calcite-text-area-max-height: 96px; }

@@ -76,7 +76,7 @@ export async function createMap(mapEl, { hasEsriKey, onPick, onBatchSelect }) {
     }
     if (f('municipio')?.length && !layers.municipio) {
       polygonLayer('municipio', f('municipio'), { title: 'Municipios', outline: { color: [20, 20, 20, 0.85], width: 1.1 },
-        labelColor: [20, 20, 20, 1], labelSize: 10.5, labelWeight: 'bold', labelMinScale: 1200000, labelMaxScale: 40000, index: 2 });
+        labelColor: [20, 20, 20, 1], labelSize: 10.5, labelWeight: 'bold', labelMinScale: 2500000, labelMaxScale: 150000, index: 2 });
     }
   }
 

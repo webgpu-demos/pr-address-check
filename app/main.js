@@ -296,7 +296,7 @@ $('batch-run').addEventListener('click', async () => {
         if (entry.error) errors++;
         $('batch-bar').value = Math.round((done / total) * 100);
         const rate = done / Math.max(1, (Date.now() - started) / 1000);
-        $('batch-status').textContent = `${done} / ${total} · ${fmtCost(cost)} · ${errors} errors · ${rate.toFixed(1)}/s`;
+        $('batch-status').textContent = `${done} / ${total}${provider ? ` · ${fmtCost(cost)}` : ''} · ${errors} errors · ${rate.toFixed(1)}/s`;
         if (Date.now() - lastPaint > 600) { lastPaint = Date.now(); paintBatch(); }
       },
     });

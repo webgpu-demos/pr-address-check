@@ -69,7 +69,7 @@ export function renderReport(scored) {
     const s = a.summary;
     return `<tr><td>${esc(armLabel(a.arm))}</td><td>${cell(s.censusFirstHit)}</td><td>${cell(s.fallback)}</td><td>${cell(s.disagreement)}</td>
       <td>${s.sourceTextFailureRate === null ? '—' : pct(s.sourceTextFailureRate)}</td>
-      <td>${s.cost.per1000 === null ? '—' : `$${s.cost.per1000.toFixed(2)}`}</td><td>${fmtMs(s.latency.p50)}<span class="ci">p95 ${fmtMs(s.latency.p95)}</span></td></tr>`;
+      <td>${s.cost.per1000 === null || a.arm.startsWith('rules') ? '—' : `$${s.cost.per1000.toFixed(2)}`}</td><td>${fmtMs(s.latency.p50)}<span class="ci">p95 ${fmtMs(s.latency.p95)}</span></td></tr>`;
   }).join('');
   const tags = [...new Set(rep.flatMap((a) => Object.keys(a.byTag)))].sort();
   const tagRows = tags.map((t) => `<tr><td>${esc(t)}</td>${rep.map((a) => {
