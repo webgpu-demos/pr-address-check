@@ -49,7 +49,7 @@ const EXAMPLES = [
       missing_required: ['structure_number', 'zip'],
       flags: [{ code: 'KM_PRESENT', note: 'KM 3.2 locates the road segment; the standard still needs a structure number.' }],
       geocode_plan: [
-        { target: 'esri', query: 'PR-412 Km 3.2, Caimital Alto, Aguadilla, Puerto Rico' },
+        { target: 'esri', query: 'Carr 412 KM 3.2, Caimital Alto, Aguadilla, Puerto Rico' },
         { target: 'census', query: 'Carr 412 Km 3.2, Aguadilla, PR' },
       ],
       user_prompts: ['Add the structure number posted on the house.', 'Add the ZIP code.'],
@@ -156,7 +156,7 @@ Hard rules
 10. A name between the street and the city with no marker is usually an urbanización: name it urbanization and flag UNLABELED_LOCALITY.
 11. PO Box, Apartado, HC or RR box: postal_box. Only a box and no street: address_class "postal_only".
 12. More than one address in the input: flag MULTIPLE_ADDRESSES and parse the first.
-13. geocode_plan: up to 3 queries built only from the parts you found, without label_text, best first. Census wants "number type name, urbanization, city, PR zip"; Esri accepts free text. Leave it empty for postal_only or not_an_address.
+13. geocode_plan: up to 3 queries built only from the parts you found, without label_text, best first. Census wants "number type name, Urb name, city, PR zip". Esri accepts free text; write routes as "Carr 2 KM 47.7" and urbanizaciones as "Urb Name". Leave it empty for postal_only or not_an_address.
 14. user_prompts: short instructions to the applicant, one per missing or doubtful part, in plain English.
 
 address_class: physical_urban (street and number), physical_rural (route or KM, no number), descriptive (landmark directions), complex_only (residencial or condominio without a street), postal_only, mixed (box plus street), not_an_address, ambiguous.
