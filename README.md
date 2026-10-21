@@ -54,6 +54,18 @@ Ground-truth columns: `id, structure_number, street_type, street_name, unit, urb
 
 The review queue keeps decisions in this browser and exports them in the same columns, so reviewed rows join the suite.
 
+## How locations are judged
+
+A geocoder answer is only as good as its agreement with what was typed. Each candidate is checked against the typed number, street (token by token; routes by route number), ZIP, urbanización and municipio.
+
+- **Address point / Street range**: number and street match. The point is trusted, so the municipio, barrio and ZIP-area checks run against it.
+- **Street only**: the street matches, the house number does not, or there is none. Common for block-lot numbers like `C-12`.
+- **Area only**: only the ZIP, barrio or town matched. Drawn as a dashed ring, never a solid point.
+- **Conflicting match**: the best match names a different urbanización, ZIP or municipio. Location fields stay blank and the candidate is kept for review.
+- When the best trusted answer is coarse but a precise match exists elsewhere (a KM marker in the next municipio, say), the result says so. Usually the typed municipio or ZIP is wrong.
+
+Esri resolves Puerto Rico KM markers (`Carr 2 KM 47.7`) as `DistanceMarker` matches; those are scored on the kilometer.
+
 ## Run locally
 
 ```sh
