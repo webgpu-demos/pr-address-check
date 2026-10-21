@@ -50,7 +50,17 @@ node tools/make-cases.mjs ground-truth.csv --pairs 2 --seed 1 --holdout 0.2 > ca
 
 Ground-truth columns: `id, structure_number, street_type, street_name, unit, urbanization, barrio, municipio, zip, lat, lon, postal_city`. Each case records its mutations (reorder, drops, noise, KM, route styles, abbreviations, postal city, block-lot numbers, accents and case, postal-only forms), so results break down by type. `--holdout` splits by a stable hash of the id.
 
-`samples/invented-cases.csv` is made from invented addresses with no coordinates. Use it to try the batch flow and parse scoring; it says nothing about location accuracy. The rule parser and the generator share assumptions, so generated cases flatter the rules. Score on real ground truth and real submissions before drawing conclusions.
+Samples (Batch → "Or load a sample"):
+
+| File | What it is | Truth |
+|---|---|---|
+| `samples/real-facilities-cases.csv` | 60 public facilities (post offices, courthouses, hospitals, campuses, banks) in 45 municipios, addresses copied as their sources write them | Municipio for all; source coordinates for 26; hand labels for number and street (`samples/real-facilities-labels.csv`). Sources in `samples/real-facilities.csv`, caveats in `samples/real-facilities-notes.md` |
+| `samples/real-messy-cases.csv` | 30 of those facilities retyped the way applicants write (lowercase, no commas, English order, abbreviations) | Same facility, so same municipio and point |
+| `samples/invented-cases.csv` | Invented addresses with controlled mutations | Labels by construction; no coordinates |
+
+The rule parser was improved using the real and messy sets, so those sets flatter it. A holdout of different facilities is the fair comparison. Generated cases flatter the rules too, since generator and parser share assumptions. Source coordinates are not survey-grade: some bank and health-center points sit kilometers from the street address.
+
+`tools/make-facility-cases.mjs` rebuilds the real set from its sources and labels.
 
 The review queue keeps decisions in this browser and exports them in the same columns, so reviewed rows join the suite.
 
