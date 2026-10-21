@@ -106,11 +106,12 @@ export function renderBatchList(entries, filter) {
     if (!groups.has(e.i)) groups.set(e.i, []);
     groups.get(e.i).push({ e, idx });
   });
-  const shown = [...groups.values()].filter((g) => g.some(({ e }) => match(e))).sort((a, b) => a[0].e.i - b[0].e.i);
+  const differs = (g) => new Set(g.filter(({ e }) => e.result).map(({ e }) => `${e.result.compliance}|${e.result.location}|${e.result.record.municipality}`)).size > 1;
+  const shown = [...groups.values()].filter((g) => (filter === 'Modes differ' ? differs(g) : g.some(({ e }) => match(e)))).sort((a, b) => a[0].e.i - b[0].e.i);
   return shown.slice(0, 400).map((g) => {
     const first = g[0].e;
     const input = first.result?.input ?? String(Object.values(first.row ?? {})[0] ?? '');
-    const differ = new Set(g.filter(({ e }) => e.result).map(({ e }) => `${e.result.compliance}|${e.result.location}|${e.result.record.municipality}`)).size > 1;
+    const differ = differs(g);
     const chips = g.sort((a, b) => Object.keys(MODE_SHORT).indexOf(a.e.mode) - Object.keys(MODE_SHORT).indexOf(b.e.mode)).map(({ e, idx }) => {
       if (e.error) return `<button type="button" class="mchip err" data-idx="${idx}">${esc(MODE_SHORT[e.mode])}: error</button>`;
       const r = e.result;
@@ -122,4 +123,10 @@ export function renderBatchList(entries, filter) {
   }).join('') + (shown.length > 400 ? `<div class="brow"><div class="tag">Showing 400 of ${shown.length}. Export for the rest.</div></div>` : '');
 }
 
-export const FILTERS = ['All', 'Compliant', 'Compliant with warnings', 'Not compliant', 'Needs review', 'Postal only', 'Not located', 'Errors'];
+export const FILTERS = ['All', 'Modes differ', 'Compliant', 'Compliant with warnings', 'Not compliant', 'Needs review', 'Postal only', 'Not located', 'Errors'];
+
+export function countDiffering(entries) {
+  const groups = new Map();
+  for (const e of entries) if (e.result) (groups.get(e.i) ?? groups.set(e.i, new Set()).get(e.i)).add(`${e.result.compliance}|${e.result.location}|${e.result.record.municipality}`);
+  return [...groups.values()].filter((s) => s.size > 1).length;
+}

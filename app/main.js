@@ -13,7 +13,7 @@ import { PROMPT_VERSION } from '../core/schema.js';
 import * as S from './settings.js';
 import { createMap } from './map.js';
 import { renderResult, esc, fmtCost } from './render.js';
-import { runBatch, scoreAll, renderReport, renderBatchList, FILTERS, RESULT_COLUMNS, resultRow, hasLabels } from './batch.js';
+import { runBatch, scoreAll, renderReport, renderBatchList, FILTERS, RESULT_COLUMNS, resultRow, hasLabels, countDiffering } from './batch.js';
 import { addToQueue, renderQueue, exportCases, clearQueue, queueSize } from './review.js';
 import { report } from '../core/score.js';
 
@@ -327,6 +327,7 @@ function paintBatch() {
     if (counts[e.result.compliance] !== undefined) counts[e.result.compliance]++;
     if (e.result.location === 'none') counts['Not located']++;
   }
+  counts['Modes differ'] = countDiffering(entries);
   $('batch-filter').innerHTML = FILTERS.filter((f) => f === 'All' || counts[f]).map((f) => `<button type="button" role="tab" aria-selected="${f === filter}" data-f="${esc(f)}">${esc(f === 'Compliant with warnings' ? 'Warnings' : f)}<span class="n">${counts[f]}</span></button>`).join('');
   $('batch-list').innerHTML = renderBatchList(entries, filter);
 }
