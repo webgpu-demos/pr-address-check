@@ -64,6 +64,19 @@ The rule parser was improved using the real and messy sets, so those sets flatte
 
 The review queue keeps decisions in this browser and exports them in the same columns, so reviewed rows join the suite.
 
+## Round one results (Oct 21)
+
+Holdout: 60 public facilities in 42 municipios, labeled before any run, code not tuned on them.
+
+| | Rules only | AI first (Haiku) |
+|---|---|---|
+| Structure number read right | 48/59 (81%) | 56/59 (95%) |
+| Street read right | 42/53 (79%) | 49/53 (92%) |
+| Municipio from the point | 59/60 | 58/59 |
+| Cost per 1,000 rows | $0 | $0.35 |
+
+Haiku and Sonnet read the real and messy sets identically; Sonnet cost about 20 times more ($6.20 vs $0.30 per 1,000 rows). Details and caveats are in the build plan.
+
 ## How locations are judged
 
 A geocoder answer is only as good as its agreement with what was typed. Each candidate is checked against the typed number, street (token by token; routes by route number), ZIP, urbanización and municipio.
