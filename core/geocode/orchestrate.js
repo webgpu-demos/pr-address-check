@@ -187,6 +187,8 @@ export function rankCandidate(c, comps) {
   const precision = PRECISION_RANK[c.precision] ?? 0;
   const conflict = isConflict(c, k);
   let effective = k.number === false && precision >= 3 ? 2 : precision;
+  // An address-level answer needs both the typed number and the typed street to agree. Otherwise it is street-level.
+  if (precision >= 3 && (k.number !== true || k.street !== true)) effective = Math.min(effective, 2);
   // A different street is not this address: only its area can be trusted.
   if (k.street === false && precision >= 2) effective = Math.min(effective, 1);
   if (conflict) effective = Math.min(effective, 1);

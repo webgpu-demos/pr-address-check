@@ -61,6 +61,14 @@ export function runGate(input, rawModelData, rulesParse) {
     components.push(comp);
   }
 
+  // One piece of text is one part: a structure number read from the route's own digits ("Carr. Estatal #198") goes.
+  const overlaps = (a, b) => a && b && a[0] < b[1] && b[0] < a[1];
+  for (let i = components.length - 1; i >= 0; i--) {
+    const c = components[i];
+    if (c.name !== 'structure_number' || !c.span) continue;
+    const clash = components.find((o) => (o.name === 'route_number' || o.name === 'street_name') && overlaps(c.span, o.span));
+    if (clash) { dropped.push({ component: c, reason: 'SAME_TEXT_AS_STREET' }); components.splice(i, 1); }
+  }
   // A place the model called a barrio without "Bo." that is no barrio but a known postal place is a postal city.
   for (const c of components) {
     if (c.name === 'barrio' && !/\b(bo|barrio)\b/i.test(fold(c.source_text)) && !isKnownBarrio(c.value) && findPostalPlace(c.value)) {

@@ -58,7 +58,7 @@ export const STREET_TYPES = new Map([
   ['carretera', 'Carretera'], ['carr', 'Carretera'], ['road', 'Carretera'], ['rd', 'Carretera'],
   ['camino', 'Camino'], ['cam', 'Camino'], ['paseo', 'Paseo'], ['pso', 'Paseo'], ['callejon', 'Callejón'], ['cjon', 'Callejón'],
   ['boulevard', 'Boulevard'], ['blvd', 'Boulevard'], ['bulevar', 'Boulevard'],
-  ['via', 'Vía'], ['ramal', 'Ramal'], ['pasaje', 'Pasaje'], ['sendero', 'Sendero'],
+  ['via', 'Vía'], ['ramal', 'Ramal'], ['pasaje', 'Pasaje'], ['sendero', 'Sendero'], ['marginal', 'Marginal'],
   ['street', 'Street'], ['st', 'Street'], ['way', 'Way'], ['drive', 'Drive'], ['dr', 'Drive'],
   ['lane', 'Lane'], ['ln', 'Lane'], ['court', 'Court'], ['ct', 'Court'], ['circle', 'Circle'],
 ]);

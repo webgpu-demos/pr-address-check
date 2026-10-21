@@ -127,8 +127,10 @@ test('Census answers first; Esri is skipped when Census matches number and stree
 test('typed municipio that disagrees with the point needs review', async () => {
   const far = [{ ...ESRI_HIT[0], lon: -66.07, matched: '45 Calle Lares, San Juan, 00969', parts: { ...ESRI_HIT[0].parts, municipio: 'San Juan', zip: '00969' } }];
   const r = await validateAddress('45 Calle Lares, Guaynabo PR 00969', ctx({ mode: 'rules', geocoders: fakeGeocoders({ 'esri:*': far }) }));
-  assert.equal(r.record.municipality, 'San Juan');
-  assert.ok(r.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT'));
+  // Conflicting evidence: neither the typed municipio nor the point is asserted; the match is kept for review.
+  assert.equal(r.record.municipality, '');
+  assert.equal(r.location, 'conflict');
+  assert.ok(r.reasons.some((x) => x.code === 'MUNICIPALITY_CONFLICT' && /San Juan/.test(x.text)));
   assert.equal(r.compliance, 'Needs review');
 });
 
@@ -325,4 +327,17 @@ test('the gate takes a ZIP+4 and a KM-HM reading, and refuses part of a number',
   assert.equal(g.components.find((c) => c.name === 'zip').value, '00693');
   assert.ok(!g.dropped.some((d) => d.component.name === 'zip'));
   assert.equal(g.components.find((c) => c.name === 'km_hm').value, '4.2');
+});
+
+test('a number read from the route digits is dropped', () => {
+  const input = 'Carr. Estatal #198, Juncos, PR 00777';
+  const answer = { address_class: 'physical_rural', missing_required: [], flags: [], geocode_plan: [], user_prompts: [], components: [
+    { name: 'street_type', value: 'Carretera', source_text: 'Carr. Estatal', inferred_from: '', role: '' },
+    { name: 'route_number', value: '198', source_text: '198', inferred_from: '', role: '' },
+    { name: 'street_name', value: '198', source_text: '198', inferred_from: '', role: '' },
+    { name: 'structure_number', value: '198', source_text: '#198', inferred_from: '', role: '' },
+    { name: 'city', value: 'Juncos', source_text: 'Juncos', inferred_from: '', role: 'unknown' }] };
+  const g = runGate(input, answer, parseRules(input));
+  assert.ok(!g.components.some((c) => c.name === 'structure_number'));
+  assert.ok(g.dropped.some((d) => d.reason === 'SAME_TEXT_AS_STREET'));
 });

@@ -132,7 +132,17 @@ export function buildResult(x) {
   const candMuniAny = candMuni ?? findMunicipio(best?.parts?.city);
   const coarseDisagrees = located && (best.effectivePrecision ?? 0) < 3 && place.municipio
     && ((candMuniAny && candMuniAny.name !== place.municipio.name) || (muniTyped && muniTyped.name !== place.municipio.name));
-  const usable = located && !best.conflict && !x.ambiguous && !coarseDisagrees;
+  // A precise point in another municipio than the one typed (and not explained by a postal city or ZIP) is
+  // conflicting evidence: either the typed municipio or the match is wrong, so neither is asserted.
+  const zipTypedEarly = componentValue(comps, 'zip');
+  const postalExplains = muniTyped && comps.some((c) => c.name === 'city' && c.role === 'postal_city' && findMunicipio(c.value)?.name === muniTyped.name);
+  const muniMismatch = located && !best.conflict && (best.effectivePrecision ?? 0) >= 3 && place.municipio && muniTyped
+    && muniTyped.name !== place.municipio.name && !postalExplains && !(zipTypedEarly && place.zcta && zipTypedEarly === place.zcta);
+  if (muniMismatch) {
+    reasons.push({ code: 'MUNICIPALITY_CONFLICT', severity: 'review', maturity: 'core', source: 'map',
+      text: `Typed ${muniTyped.name}, but the match is in ${place.municipio.name}: ${best.matched}.` });
+  }
+  const usable = located && !best.conflict && !x.ambiguous && !coarseDisagrees && !muniMismatch;
   if (coarseDisagrees) {
     reasons.push({ code: 'COARSE_POINT_ELSEWHERE', severity: 'info', maturity: 'experimental', source: 'map',
       text: `The ${best.effectivePrecision === 2 ? 'street' : 'area'} match is placed in ${place.municipio.name}, but ${candMuniAny && candMuniAny.name !== place.municipio.name ? `the geocoder says ${candMuniAny.name}` : `${muniTyped.name} was typed`}; no municipio recorded from it.` });
@@ -257,7 +267,7 @@ export function buildResult(x) {
   if (!best) location = 'none';
   else if (place?.checked && !place.inPR) location = 'outside';
   else if (x.ambiguous) location = 'ambiguous';
-  else if (best.conflict) location = 'conflict';
+  else if (best.conflict || muniMismatch) location = 'conflict';
 
   // Field sources and the output record.
   const fields = {};

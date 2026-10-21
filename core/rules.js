@@ -6,7 +6,7 @@ import { fold, squash } from './text.js';
 import { MUNICIPIOS, STREET_TYPES, POSTAL_ONLY, PR_ZIP, isPrZip, findPostalPlace, findMunicipio } from './vocab.js';
 
 const SPANISH_TYPES = new Set(['calle', 'cll', 'c/', 'avenida', 'ave', 'av', 'camino', 'cam', 'paseo', 'pso', 'callejon', 'cjon',
-  'boulevard', 'blvd', 'bulevar', 'via', 'ramal', 'pasaje', 'sendero']);
+  'boulevard', 'blvd', 'bulevar', 'via', 'ramal', 'pasaje', 'sendero', 'marginal']);
 // English words written in Spanish order ("Street Flamboyán", "Avenue Los Robles").
 const TYPE_FIRST_ENGLISH = new Set(['street', 'st', 'avenue']);
 const NAME_CONNECTORS = new Set(['de', 'del', 'la', 'las', 'los', 'el']);
@@ -56,6 +56,12 @@ export function parseRules(input, opts = {}) {
     flag('NON_ADDRESS_TEXT', `"${m[0]}" is not part of the address.`);
   }
 
+  // 0b. Intersections name a second road, never the house: "Int. #189", "Int. PR 660", "Intersección Carr. 111".
+  for (const m of text.matchAll(/\b(?:int\.?|intersecci[oó]n)\s*(?:(?:carr(?:etera)?|pr|road|rd)\.?\s*)?[-#]?\s*\d{1,3}\b/gi)) {
+    if (!free(m.index, m.index + m[0].length)) continue;
+    add('label_text', m[0], m.index, m.index + m[0].length);
+  }
+
   // 0. Attention / care-of lines are never address parts.
   for (const m of text.matchAll(/(?:^|,)\s*((?:attn\.?|atenci[oó]n|attention|c\/o|care\s+of)\b[^,]*)/gi)) {
     const s = m.index + m[0].indexOf(m[1]);
@@ -84,7 +90,7 @@ export function parseRules(input, opts = {}) {
   }
 
   // 3. State, but not the "PR" of a route ("PR-165", "PR 2").
-  const state = /\b(P\.\s?R\.|PR|Puerto\s+Rico)\b(?![-\s]*\d{1,3}\b)/i.exec(text);
+  const state = /\b(P\.\s?R\.|PR|Puerto\s+Rico)\b(?![-\s#]*\d{1,3}\b)/i.exec(text);
   if (state && free(state.index, state.index + state[0].length)) {
     add('state', 'PR', state.index, state.index + state[0].length);
   }
@@ -105,7 +111,7 @@ export function parseRules(input, opts = {}) {
   }
 
   // 5. Routes: Carr. 172, Carretera 2, Road 165, PR-165.
-  const route = /\b(carr(?:etera)?\.?|state\s+(?:road|rd\.?|hwy\.?|highway)|road|rd\.?|ruta|hwy\.?|pr)\s*[-#]?\s*(\d{1,3}[a-z]?)\b(?!\d)/gi;
+  const route = /\b(carr(?:etera)?\.?(?:\s+estatal)?|state\s+(?:road|rd\.?|hwy\.?|highway)|road|rd\.?|ruta|hwy\.?|pr)\s*(?:no\.?\s*)?[-#]?\s*(\d{1,3}[a-z]?)\b(?!\d)/gi;
   for (const m of text.matchAll(route)) {
     if (!free(m.index, m.index + m[0].length)) continue;
     const typeEnd = m.index + m[1].length;
@@ -162,10 +168,15 @@ export function parseRules(input, opts = {}) {
       if (ENGLISH_TYPES.has(t.key) && prevWord && placeNext) continue;
       const nameToks = [];
       let j = i + 1;
+      const nameGoesOn = (k) => k < tokens.length && !isStop(tokens[k]) && !isMunicipioAt(tokens, k, true) && !postalPlaceEndsAt(tokens, k);
       if (j < tokens.length && /^\d+[a-z]?$/i.test(tokens[j].raw) && !used[tokens[j].start]) {
-        nameToks.push(tokens[j]); j++; // "Calle 3"
+        nameToks.push(tokens[j]); j++; // "Calle 3"; "Calle 65 Infantería", "Calle 14 de Julio" continue with words
+        if (j < tokens.length && /^\p{L}/u.test(tokens[j].raw) && !/^[a-z]{1,2}-?\d/i.test(tokens[j].raw)) {
+          while (nameGoesOn(j)) { nameToks.push(tokens[j]); j++; }
+        }
       } else {
-        while (j < tokens.length && !isStop(tokens[j]) && !isMunicipioAt(tokens, j, true) && !(nameToks.length && postalPlaceAt(tokens, j))) { nameToks.push(tokens[j]); j++; }
+        const blockAhead = (k) => /^[a-z]{1,2}$/i.test(tokens[k].raw) && /^\d+$/.test(tokens[k + 1]?.raw ?? '');
+        while (nameGoesOn(j) && !(nameToks.length && (postalPlaceEndsAt(tokens, j) || blockAhead(j)))) { nameToks.push(tokens[j]); j++; }
       }
       if (!nameToks.length) continue;
       add('street_type', bareC ? 'Calle' : TYPE_FIRST_ENGLISH.has(t.key) ? (t.key === 'avenue' ? 'Avenida' : 'Calle') : STREET_TYPES.get(t.key) ?? t.raw.replace(/\.$/, ''), t.start, t.end);
@@ -214,20 +225,29 @@ export function parseRules(input, opts = {}) {
     const before = tokens[street.typeIndex - 1];
     const next = tokens[street.nameEnd + 1];
     const afterMarker = tokens[street.nameEnd + 2];
-    if (numberish(before)) numTok = before;
+    // "Calle Lizzie Graham HF 16": block letters and lot number written apart.
+    if (next && /^[a-z]{1,2}$/i.test(next.raw) && afterMarker && /^\d+$/.test(afterMarker.raw) && !used[next.start]) {
+      numTok = { raw: `${next.raw}${afterMarker.raw}`, start: next.start, end: afterMarker.end, key: '', spaced: true }; after = true;
+    } else if (numberish(before)) numTok = before;
     else if (numberish(next)) { numTok = next; after = true; }
     else if (next && NUMBER_MARKERS.has(next.key) && numberish(afterMarker)) { numTok = afterMarker; after = true; }
+    // "Calle H, N-9" and "Calle 14 de Julio Final 159": one comma or "final" between the street and its number.
+    else if (next && (next.raw === ',' || ['final', 'frnt', 'frente'].includes(next.key)) && numberish(afterMarker)
+      && (/[a-z]/i.test(afterMarker.raw) || next.raw !== ',')) { numTok = afterMarker; after = true; }
   }
   if (!numTok) {
     const hashTok = tokens.find((t) => /^#\s*\S/.test(t.raw) && numberish(t));
     if (hashTok) numTok = hashTok;
   }
-  if (!numTok && !street) {
-    // "Robles 61 ..." — a word followed by a number, no street type.
+  if (!street) {
+    // "Robles 61 ..." or "Andres Arus Rivera #118": words then a number, no street type.
     for (let i = 1; i < tokens.length; i++) {
-      if (numberish(tokens[i]) && /^[a-z]/i.test(tokens[i - 1].raw) && !used[tokens[i - 1].start]
+      if (numberish(tokens[i]) && (!numTok || numTok === tokens[i]) && /^\p{L}/u.test(tokens[i - 1].raw) && !used[tokens[i - 1].start]
         && !MARKER_WORDS.has(tokens[i - 1].key) && !isMunicipioAt(tokens, i - 1, false)) {
-        add('street_name', tokens[i - 1].raw, tokens[i - 1].start, tokens[i - 1].end);
+        let k = i - 1;
+        while (k - 1 >= 0 && /^\p{L}/u.test(tokens[k - 1].raw) && !used[tokens[k - 1].start] && !isStop(tokens[k - 1]) && i - k < 4) k--;
+        const words = tokens.slice(k, i);
+        add('street_name', words.map((w) => w.raw).join(' '), words[0].start, words[words.length - 1].end);
         numTok = tokens[i]; after = true;
         flag('NONSTANDARD_ORDER', 'The number follows the street name; the standard puts it first.');
         break;
@@ -241,7 +261,7 @@ export function parseRules(input, opts = {}) {
   if (numTok) {
     const raw = numTok.raw.replace(/^#/, '').replace(/,$/, '');
     const s = numTok.start + (numTok.raw.startsWith('#') ? 1 : 0);
-    add('structure_number', raw.toUpperCase(), s, s + raw.length);
+    add('structure_number', raw.toUpperCase(), s, numTok.spaced ? numTok.end : s + raw.length);
     if (after && street) flag('NONSTANDARD_ORDER', 'The number follows the street name; the standard puts it first.');
     if (/-/.test(raw) || /^[a-z]/i.test(raw)) {
       flag('AMBIGUOUS_NUMBER', `"${raw}" could be block and lot, or building and unit.`);
@@ -358,6 +378,20 @@ export function titleCase(s) {
 }
 
 /** A known postal place (1-3 words) starting at token i: "levittown", "rio piedras", "hato rey". */
+/** A postal place at i that closes the address: followed by a comma, the state, a ZIP, a municipio or the end. */
+function postalPlaceEndsAt(tokens, i) {
+  const len = postalPlaceAt(tokens, i);
+  if (!len) return 0;
+  const next = tokens[i + len];
+  if (next && next.raw === ',') {
+    // "Ave General Ramey, San Antonio": another place right after the comma means this one is part of the name.
+    const after = i + len + 1;
+    if (tokens[after] && (postalPlaceAt(tokens, after) || municipioAt(tokens, after, { allowAfterType: true }))) return 0;
+    return len;
+  }
+  return !next || /^(pr|p\.r|puerto|00[679]\d{2}(-\d{4})?)$/i.test(next.key) || municipioAt(tokens, i + len, { allowAfterType: true }) ? len : 0;
+}
+
 function postalPlaceAt(tokens, i) {
   for (let len = 3; len >= 1; len--) {
     const slice = tokens.slice(i, i + len);
