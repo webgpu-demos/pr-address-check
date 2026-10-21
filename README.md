@@ -77,6 +77,14 @@ Holdout: 60 public facilities in 42 municipios, labeled before any run, code not
 
 Haiku and Sonnet read the real and messy sets identically; Sonnet cost about 20 times more ($6.20 vs $0.30 per 1,000 rows). Details and caveats are in the build plan.
 
+## Next steps
+
+1. **Real submissions.** Run the liaison team's ~30 submissions, labeled by hand before the run. They contain applicant data, so keep them off this public page.
+2. **Ground truth for location.** Score points against an authoritative layer (CRIM parcels or an official address-point layer). The source coordinates in the current samples are not reliable enough.
+3. **More address-level points.** AI first placed 16 of 39 holdout addresses at address level. The limit is Census and Esri coverage, not reading. Add the client's address points and KM markers as a locator ahead of the public geocoders.
+4. **Stability.** Run a fixed subset five times to measure how often the model's reading changes.
+5. **OpenAI.** Run the holdout with a live key to confirm the default model (`gpt-6-luna`) and compare it with Haiku.
+
 ## How locations are judged
 
 A geocoder answer is only as good as its agreement with what was typed. Each candidate is checked against the typed number, street (token by token; routes by route number), ZIP, urbanización and municipio.
