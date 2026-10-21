@@ -412,3 +412,13 @@ paintProvider();
 
 // Open on Settings the first time, so AI modes have what they need.
 if (!S.getKey(settings.provider) && settings.mode !== 'rules') showPanel('settings');
+
+// Console harness for scripted checks: await __prac.run('address', 'rules') returns the full result object.
+window.__prac = {
+  run: (input, mode = 'rules', formMunicipio = '') => validateAddress(input, {
+    mode, provider: MODES[mode].usesModel ? currentProvider() : null, geocoders, gis, usng, settings: pipelineSettings(), formMunicipio,
+  }),
+  show: (r) => { addrEl.value = r.input; showPanel('validate'); showResult(r, keyOf()); },
+  gis,
+  status: () => gis.status(),
+};
