@@ -84,7 +84,7 @@ test('AI first uses the verified model parse, records mode, model and cost', asy
   assert.equal(r.fallback, null);
   assert.equal(r.gate.ok, true);
   assert.equal(r.fields.label_text.value, 'Attn Oficina Central');
-  assert.ok(r.reasons.some((x) => x.code === 'NON_ADDRESS_TEXT' && x.source === 'model'));
+  assert.ok(r.reasons.some((x) => x.code === 'NON_ADDRESS_TEXT' && x.source === 'model+code'));
   assert.ok(r.cost > 0);
   assert.equal(provider.calls.length, 1);
 });
@@ -239,4 +239,45 @@ test('the gate sets aside flags the verified parts do not support', () => {
   assert.ok(!g.flags.some((f) => f.code === 'KM_PRESENT'));
   assert.equal(g.droppedFlags[0].code, 'KM_PRESENT');
   assert.ok(g.flags.some((f) => f.code === 'STREET_NAMED_AFTER_MUNICIPALITY'));
+});
+
+test('structural flags come from code, so a model that misses one is corrected', () => {
+  const input = 'Calle Ceiba 18, Urb. Los Pinos, Bayamón PR 00959';
+  const answer = {
+    address_class: 'physical_urban',
+    components: [
+      { name: 'street_type', value: 'Calle', source_text: 'Calle', inferred_from: '', role: '' },
+      { name: 'street_name', value: 'Ceiba', source_text: 'Ceiba', inferred_from: '', role: '' },
+      { name: 'structure_number', value: '18', source_text: '18', inferred_from: '', role: '' },
+      { name: 'urbanization', value: 'Los Pinos', source_text: 'Urb. Los Pinos', inferred_from: '', role: '' },
+      { name: 'city', value: 'Bayamón', source_text: 'Bayamón', inferred_from: '', role: 'postal_city' },
+      { name: 'zip', value: '00959', source_text: '00959', inferred_from: '', role: '' },
+    ],
+    missing_required: ['barrio'], flags: [{ code: 'POSTAL_CITY_DIFFERS', note: 'guess' }], geocode_plan: [], user_prompts: [],
+  };
+  const g = runGate(input, answer, parseRules(input));
+  const codes = g.flags.map((f) => f.code).sort();
+  assert.deepEqual(codes, ['NONSTANDARD_ORDER', 'STREET_NAMED_AFTER_MUNICIPALITY']);
+  assert.equal(g.components.find((c) => c.name === 'city').role, 'unknown');
+  assert.equal(g.droppedFlags[0].code, 'POSTAL_CITY_DIFFERS');
+});
+
+test('a place the model mapped to its municipio keeps what was typed', () => {
+  const input = '305 Avenida Los Robles, Río Piedras PR 00926';
+  const answer = {
+    address_class: 'physical_urban',
+    components: [
+      { name: 'structure_number', value: '305', source_text: '305', inferred_from: '', role: '' },
+      { name: 'street_type', value: 'Avenida', source_text: 'Avenida', inferred_from: '', role: '' },
+      { name: 'street_name', value: 'Los Robles', source_text: 'Los Robles', inferred_from: '', role: '' },
+      { name: 'city', value: 'San Juan', source_text: 'Río Piedras', inferred_from: '', role: 'municipality' },
+      { name: 'zip', value: '00926', source_text: '00926', inferred_from: '', role: '' },
+    ],
+    missing_required: ['barrio'], flags: [], geocode_plan: [], user_prompts: [],
+  };
+  const g = runGate(input, answer, parseRules(input));
+  const city = g.components.find((c) => c.name === 'city');
+  assert.equal(city.value, 'Río Piedras');
+  assert.equal(city.role, 'postal_city');
+  assert.ok(g.ok);
 });

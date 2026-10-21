@@ -7,6 +7,8 @@ import { findMunicipio, STREET_TYPES, isPrZip, MUNICIPIOS } from './vocab.js';
 
 const MUNICIPIO_WORDS = MUNICIPIOS.map((m) => m.key);
 import { fold } from './text.js';
+import { derivedFlags, mergeFlags, DERIVED } from './flags.js';
+import { titleCase } from './rules.js';
 
 const KEY_FIELDS = ['structure_number', 'street_name', 'zip', 'city', 'urbanization', 'barrio'];
 const MAX_VALUE = 120;
@@ -33,7 +35,14 @@ export function runGate(input, rawModelData, rulesParse) {
     if (!loc.found) { dropped.push({ component: c, reason: 'SOURCE_TEXT_NOT_FOUND' }); continue; }
     comp.span = loc.span;
     // The value must be a reading of its own source text, not new content.
-    if (!valueFitsSource(comp)) { dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE' }); continue; }
+    if (!valueFitsSource(comp)) {
+      // A place name the model "corrected" (Río Piedras -> San Juan) keeps what was typed, as a postal city.
+      if (comp.name === 'city') {
+        dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE', salvaged: true });
+        comp.value = titleCase(squash(c.source_text));
+        comp.role = findMunicipio(comp.value) ? (comp.role === 'municipality' ? 'municipality' : 'unknown') : 'postal_city';
+      } else { dropped.push({ component: c, reason: 'VALUE_NOT_IN_SOURCE' }); continue; }
+    }
     // Vocabulary.
     if (comp.name === 'street_type') comp.value = STREET_TYPES.get(fold(comp.value).replace(/\.$/, '')) ?? comp.value;
     if (comp.name === 'zip') {
@@ -49,13 +58,19 @@ export function runGate(input, rawModelData, rulesParse) {
     components.push(comp);
   }
 
-  // Flags must agree with the verified parts; a flag with nothing behind it is set aside.
+  // A lone municipio name is not known to be a postal city; only the point can say that.
+  const cities = components.filter((c) => c.name === 'city');
+  if (cities.length === 1 && cities[0].role === 'postal_city' && findMunicipio(cities[0].value)) cities[0].role = 'unknown';
+
+  // Structural flags come from code over the verified parts; the model's flags must agree or are set aside.
+  const derived = derivedFlags(input, components);
   const droppedFlags = [];
-  const flags = [];
+  const modelFlags = [];
   for (const f of modelData.flags) {
-    if (flagSupported(f.code, components)) flags.push({ ...f, source: 'model' });
-    else droppedFlags.push(f);
+    const ok = DERIVED.has(f.code) ? derived.some((d) => d.code === f.code) : flagSupported(f.code, components);
+    if (ok) modelFlags.push({ ...f, source: 'model' }); else droppedFlags.push(f);
   }
+  const flags = mergeFlags(derived, modelFlags);
   const zip = components.find((c) => c.name === 'zip');
   if (zip && !isPrZip(zip.value) && !flags.some((f) => f.code === 'ZIP_OUT_OF_RANGE')) {
     flags.push({ code: 'ZIP_OUT_OF_RANGE', note: 'The ZIP is not a Puerto Rico ZIP.', source: 'gate' });
@@ -63,7 +78,8 @@ export function runGate(input, rawModelData, rulesParse) {
 
   const disagreements = compareParses(components, rulesParse?.components ?? []);
   const total = modelData.components.length;
-  const ok = components.length > 0 && dropped.length <= Math.max(1, Math.floor(total / 3));
+  const hardDrops = dropped.filter((d) => !d.salvaged).length;
+  const ok = components.length > 0 && hardDrops <= Math.max(1, Math.floor(total / 3));
   return {
     ok,
     reason: ok ? '' : (components.length ? 'TOO_MANY_DROPPED' : 'NOTHING_VERIFIED'),
